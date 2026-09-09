@@ -40,6 +40,15 @@ cp "$ROOT/Resources/Info.plist" "$APP/Contents/Info.plist"
 [ -f "$ROOT/Resources/Toothpaste.icns" ] && cp "$ROOT/Resources/Toothpaste.icns" "$APP/Contents/Resources/"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
+# Stamp the source commit into the bundle. Everyone builds their own copy from
+# whatever they last pulled, so "which version are you on" is really "which commit" —
+# and without this there is no way to answer it from a running app.
+COMMIT="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+if ! git -C "$ROOT" diff --quiet HEAD 2>/dev/null; then
+	COMMIT="$COMMIT+local"
+fi
+plutil -replace ToothpasteCommit -string "$COMMIT" "$APP/Contents/Info.plist"
+
 # Deliberately NOT `find-identity -v`: a self-signed root is untrusted, so -v filters
 # it out entirely. codesign signs with it regardless, and the resulting designated
 # requirement pins the *certificate* hash rather than the binary hash — which is the

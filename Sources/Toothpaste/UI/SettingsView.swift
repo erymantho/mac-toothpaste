@@ -73,6 +73,12 @@ private struct GeneralTab: View {
             }
             Text("Without it, typing silently does nothing at all.")
                 .font(.caption).foregroundStyle(.secondary)
+
+            LabeledContent("Version") {
+                Text(AppVersion.display)
+                    .font(.system(.caption, design: .monospaced))
+                    .textSelection(.enabled)
+            }
             }
         }
         .formStyle(.grouped)

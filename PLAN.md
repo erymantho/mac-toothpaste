@@ -741,6 +741,25 @@ edge. Defensible — it is where the user put it — but a panel dragged off by 
 then hard to find again. Clamping on reopen would fix that at the cost of no longer
 being able to park it half off deliberately.
 
+## Versioning — 2026-09-09
+
+Tagged, but **no binary attached to the release**, deliberately: a downloaded `.app`
+carries `com.apple.quarantine` and Gatekeeper rejects it, which is the exact problem
+clone-and-build was chosen to avoid. A release asset would quietly undo that decision.
+
+The gap worth closing was different. `Info.plist` still said `0.1.0` from phase 0, and
+**the version appeared nowhere in the app**. With clone-and-build everyone sits on
+whatever commit they last pulled, so when a colleague reports something odd there is no
+way to know what they are running — and a version number alone does not identify a
+build here. The commit does.
+
+- `Info.plist` → `1.0.0`
+- `scripts/bundle.sh` stamps `ToothpasteCommit` from `git rev-parse --short HEAD`,
+  appending `+local` when the working tree is dirty
+- Settings → General shows `1.0.0 (57aec6b)`, selectable so it can be pasted into a
+  message
+- Falls back to `unknown` when built without git, so a tarball still builds
+
 ## Raised, not yet decided
 
 - [~] **No way to read a long entry before sending it** — a detail strip was built on
@@ -940,7 +959,38 @@ twice in Launchpad, and the project folder is Nextcloud-synced.
 - [~] ~~Onboarding screen for the Accessibility grant, with a deep link to the right~~
       System Settings pane
 - [x] README with screenshots
-- [ ] Distribution: notarisation, or just "build it yourself" — decide later
+- [x] **Distribution: clone and build** — settled 2026-09-09. Private repo at
+      `github.com/erymantho/mac-toothpaste`; colleagues clone, `make cert`,
+      `make install`.
+
+      **Quarantine decides this, not signing.** A downloaded app carries
+      `com.apple.quarantine` and Gatekeeper rejects anything not notarised by Apple,
+      which needs a paid developer account. A locally built app is never quarantined
+      and simply runs — verified: our build carries only `com.apple.provenance`.
+      Building also means each person's certificate is their own, so nobody's
+      permission depends on someone else's certificate not expiring. Mine expires
+      2027-09-08.
+
+      **A test that proved nothing, and why.** `spctl -a` reported "accepted" even for
+      a freshly quarantined copy — because Gatekeeper assessment is *disabled* on this
+      machine (`spctl --status` → assessments disabled). On a colleague's Mac, with it
+      enabled by default, the same app is blocked. Check the machine's own posture
+      before drawing conclusions from a security test run on it.
+
+      `make cert` was added so nobody has to do the Keychain Access dance: it generates
+      an RSA key and a self-signed code-signing certificate with openssl, imports it
+      with `-T /usr/bin/codesign` so builds do not prompt, and **refuses to create a
+      second one with the same name** — duplicates are what made the Accessibility
+      grant reset at random. Ten-year validity, against Keychain Access's default of
+      one.
+
+      Not chosen, and why: **DMG** puts every colleague through the Gatekeeper override
+      in System Settings on every update, and ties them all to one certificate.
+      **Notarisation** (€99/yr) is the only clean download route and is hard to justify
+      for an internal tool. **MDM** would have been technically best — this Mac is
+      Intune-enrolled, and a PPPC profile can pre-approve Accessibility, removing both
+      friction points — but it needs IT involvement, which is a conversation worth
+      having separately for a tool that types credentials on managed machines.
 
 ---
 
