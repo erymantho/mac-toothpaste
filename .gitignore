@@ -1,0 +1,10 @@
+# Build output
+.build/
+.swiftpm/
+dist/
+
+# Generated from scripts/make-icon.sh — but committed anyway, so a clone builds
+# without needing to regenerate it. Remove this comment if that changes.
+
+.DS_Store
+*.xcodeproj
