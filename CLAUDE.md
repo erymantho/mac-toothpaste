@@ -23,9 +23,13 @@ configurable hotkey, and the click-to-target overlay.
 
 ## Version control
 
-Added 2026-09-09, when distribution to colleagues was settled as "clone and build".
-Before that this was deliberately a plain folder — do not treat the repo as licence to
-commit or push on the user's behalf. They drive that; ask.
+Private repo at `github.com/erymantho/mac-toothpaste`, added 2026-09-09 when
+distribution was settled as "clone and build".
+
+**Committing and pushing to this repo is authorised** (granted 2026-09-09). Keep
+commits scoped to one change with a message that says why, not what. This authorisation
+is specific to this repository — it does not extend to creating other repos, adding
+remotes, or publishing anywhere else.
 
 ## Stack
 

@@ -7,6 +7,8 @@ VM consoles, browser-based terminals, and password fields.
 Inspired by [0xpaste](https://github.com/mypetcheetah/0xpaste) (Windows, Electron).
 Native Swift, no third-party dependencies, ~1.6 MB.
 
+<img src="docs/panel.png" width="360" alt="The Toothpaste panel: a pinned entry with an accent stripe, a password from a manager shown as dots, and recent clipboard entries.">
+
 ## Install
 
 Four commands. The whole thing takes a few minutes, most of it waiting for the
@@ -53,6 +55,12 @@ Press **⌃⌥V**, or click 📝 in the menu bar.
    That click is what chooses the destination.
 3. It types. **Esc cancels** mid-stream, wherever focus is.
 
+<img src="docs/armed.png" width="360" alt="An armed entry: the panel stays open with a banner reading 'now click the field you want this typed into', and the chosen row is outlined.">
+
+Picking an item does not send it. The panel stays open and waits, so the click that
+follows is what decides where the text lands — which is the whole reason this works
+inside a remote session, where the caret is wherever you last clicked on the far side.
+
 Start typing to search; Esc clears it. ↑/↓ move the selection, ⏎ arms it. Pin an item
 to keep it. Hovering a long entry shows the whole thing below the list, so you can read
 a command before sending it to a server. Drag the panel by its header — it reopens
@@ -84,8 +92,13 @@ automatic choice.
 
 **Layout check** in Settings is the one worth knowing about: pick a profile, paste any
 text, and see exactly which characters that layout cannot produce — *before* typing a
-password into a remote machine. Over RDP an unproducible character is skipped and
-reported rather than guessed, because guessing silently types the letter `a`.
+password into a remote machine.
+
+<img src="docs/layout-check.png" width="620" alt="Layout check: with the Windows via RDP profile selected, 113 characters are reachable and three — e-acute, u-umlaut and the euro sign — are reported as impossible to type.">
+
+Over RDP an unproducible character is skipped and reported rather than guessed. Guessing
+would type the letter `a`, because the Unicode fallback pairs its payload with virtual
+key 0 — which *is* the A key — and RDP clients read the key code, not the payload.
 
 ## Updating
 
