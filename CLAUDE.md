@@ -23,8 +23,8 @@ configurable hotkey, and the click-to-target overlay.
 
 ## Version control
 
-Private repo at `github.com/erymantho/mac-toothpaste`, added 2026-09-09 when
-distribution was settled as "clone and build".
+Repo at `github.com/erymantho/mac-toothpaste`, added 2026-09-09 when distribution was
+settled as "clone and build".
 
 **Committing and pushing to this repo is authorised** (granted 2026-09-09). Keep
 commits scoped to one change with a message that says why, not what. This authorisation
@@ -166,10 +166,10 @@ These are the non-obvious ones. Read before touching the relevant area.
     directions: it is why the tool is useful for credentials, and it is the sharpest
     demonstration that this is functionally an autotyper. Say so plainly in any
     user-facing description.
-11. **This Mac has three 2560×1440 displays.** Panel placement must pick the screen
-    the mouse is on, not the main one. And `screencapture -x out.png` grabs a single
-    display — a window you are looking for is often on another, so pass `-D 1|2|3`
-    before concluding something did not happen.
+11. **Multi-display setups are the normal case here, not the exception.** Panel
+    placement must pick the screen the mouse is on, not the main one. And
+    `screencapture -x out.png` grabs a single display — a window you are looking for is
+    often on another, so pass `-D 1|2|3` before concluding something did not happen.
 
 ## Divergences from 0xpaste
 

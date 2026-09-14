@@ -127,6 +127,11 @@ that `make app` deletes, and two registered copies show up twice in Launchpad.
 If the app insists the permission is missing while System Settings shows it enabled,
 the entry is stale: `make reset-permission`, then `make install` and grant once.
 
+## Licence
+
+[MIT](LICENSE). 0xpaste is MIT too; no code was taken from it — this is a from-scratch
+Swift implementation — but the licence choice follows it deliberately.
+
 ## What this is, plainly
 
 It types your clipboard contents as synthetic keystrokes, and that works in password
