@@ -30,8 +30,10 @@ remove_bundle() {
 	rm -rf "$target"
 }
 
-swift build -c release --package-path "$ROOT"
-BIN_PATH="$(swift build -c release --package-path "$ROOT" --show-bin-path)"
+# shellcheck disable=SC2046  # deliberate: expands to nothing, or to two arguments.
+SDK=$("$ROOT/scripts/select-sdk.sh")
+swift build -c release --package-path "$ROOT" $SDK
+BIN_PATH="$(swift build -c release --package-path "$ROOT" $SDK --show-bin-path)"
 
 remove_bundle "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"

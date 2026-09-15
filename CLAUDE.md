@@ -46,6 +46,21 @@ remotes, or publishing anywhere else.
   stated reason.
 - Deployment target: macOS 14+, Apple Silicon.
 
+## Command Line Tools 6.4 ships an SDK it cannot build against
+
+CLT 6.4 installs a macOS 27 SDK whose SwiftUI declares `@State` and friends as macros,
+without shipping the `SwiftUIMacros` plugin that implements them. Every SwiftUI file
+then fails with *external macro implementation type 'SwiftUIMacros.StateMacro' could not
+be found*. Full Xcode has the plugin; Command Line Tools does not.
+
+`scripts/select-sdk.sh` picks the newest SDK that predates the macro requirement, and
+`make` and `bundle.sh` pass what it prints. It returns nothing when the plugin is
+present, so the workaround disappears by itself once Apple ships it. Delete the script
+and both call sites at that point.
+
+**If a build suddenly fails across every SwiftUI file, check this before the code.** It
+arrived with a toolchain update, not with a change to the project.
+
 ## Commands
 
 ```sh

@@ -2,8 +2,12 @@ APP := dist/Toothpaste.app
 
 .PHONY: build app run cert install reset-permission verify clean
 
+# See scripts/select-sdk.sh: Command Line Tools 6.4 ships an SDK it cannot fully build
+# against. Expands to nothing when the toolchain is healthy.
+SDK := $(shell ./scripts/select-sdk.sh)
+
 build:
-	swift build
+	swift build $(SDK)
 
 app:
 	./scripts/bundle.sh
