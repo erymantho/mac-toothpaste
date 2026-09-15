@@ -30,8 +30,19 @@ settled as "clone and build".
 
 **Committing and pushing to this repo is authorised** (granted 2026-09-09). Keep
 commits scoped to one change with a message that says why, not what. This authorisation
-is specific to this repository — it does not extend to creating other repos, adding
+is specific to this repository: it does not extend to creating other repos, adding
 remotes, or publishing anywhere else.
+
+**Changes to the app itself wait for the user before they are pushed** (2026-09-15).
+Build it, `make install` it, say what changed and what to look at, then stop. They test
+and finetune first; push and tag only once they say so. This covers behaviour, UI, the
+typing engine, defaults, anything someone would notice while using it.
+
+Documentation, README, plan entries, scripts and build fixes stay autonomous. There is
+nothing to try out in those.
+
+Local commits are fine either way. The gate is the push, because other people now pull
+from this repo and a version they receive should be one that has actually been used.
 
 ## Stack
 
