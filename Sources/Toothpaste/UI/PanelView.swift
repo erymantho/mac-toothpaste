@@ -16,7 +16,6 @@ struct PanelView: View {
     /// look chosen when nothing had been chosen.
     @State private var selection: Int?
     @State private var revealed: Set<ClipItem.ID> = []
-    @State private var hovered: ClipItem.ID?
     @State private var confirmingClear = false
 
     /// The search is a plain string this view maintains, not an `NSTextField`.
@@ -46,7 +45,6 @@ struct PanelView: View {
                 if searchVisible { queryDisplay }
                 Divider().opacity(0.3)
                 list
-                detail
                 footer
             }
             .background(WindowDragBlocker())
@@ -224,10 +222,6 @@ struct PanelView: View {
                         row(item, isSelected: index == selection, isArmed: state.armed?.id == item.id)
                             .id(item.id)
                             .onTapGesture { onArm(item) }
-                            .onHover { inside in
-                                if inside { hovered = item.id }
-                                else if hovered == item.id { hovered = nil }
-                            }
                     }
                 }
                 .padding(.horizontal, 12)
@@ -281,46 +275,6 @@ struct PanelView: View {
     private func rowFill(isSelected: Bool, isPinned: Bool) -> Color {
         if isSelected { return Color.accentColor.opacity(0.25) }
         return isPinned ? Color(white: 0.155) : Color(white: 0.11)
-    }
-
-    // MARK: - Detail
-    //
-    // Rows are one line and truncate, so what you are about to type into a remote
-    // machine is otherwise invisible. Shown as a fixed strip rather than by expanding
-    // the row, so the list does not shift under the pointer while you are reading it.
-    // Appears only when the text would not have fitted anyway.
-
-    private var detailItem: ClipItem? {
-        if let hovered, let item = filtered.first(where: { $0.id == hovered }) { return item }
-        if let selection, filtered.indices.contains(selection) { return filtered[selection] }
-        return nil
-    }
-
-    private var detail: some View {
-        Group {
-            if let item = detailItem, needsDetail(item) {
-                ScrollView {
-                    Text(item.text)
-                        .font(.system(size: 11, design: .monospaced))
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .frame(height: 84)
-                .padding(8)
-                .background(Color(white: 0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-                .padding(.horizontal, 12)
-                .padding(.bottom, 8)
-            }
-        }
-    }
-
-    private func needsDetail(_ item: ClipItem) -> Bool {
-        // A hidden entry gets no strip at all. Showing dots and a note explaining they
-        // were dots added nothing but height. Revealing it with the eye button brings
-        // the strip back with the real text, which is the only state where it helps.
-        if item.concealed, !revealed.contains(item.id) { return false }
-        return item.text.contains("\n") || item.text.count > 32
     }
 
     private func iconButton(_ symbol: String, action: @escaping () -> Void) -> some View {

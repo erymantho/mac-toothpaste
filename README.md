@@ -62,9 +62,7 @@ follows is what decides where the text lands. That is the whole reason it works 
 a remote session, where the caret sits wherever you last clicked on the far side.
 
 Start typing to search; Esc clears it. ↑/↓ move the selection, ⏎ arms it. Pin an item
-to keep it. Hovering a long entry shows the whole thing below the list, so you can read
-a command before sending it to a server. Drag the panel by its header; it reopens
-where you left it.
+to keep it. Drag the panel by its header; it reopens where you left it.
 
 Right-click 📝 for the menu, or the gear in the panel for settings.
 

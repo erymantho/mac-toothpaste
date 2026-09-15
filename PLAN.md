@@ -764,6 +764,25 @@ edge. Defensible — it is where it was put — but a panel dragged off by accid
 then hard to find again. Clamping on reopen would fix that at the cost of no longer
 being able to park it half off deliberately.
 
+## 1.1.0 — 2026-09-15
+
+First release after other people started using it, which changes the standard: removals
+now cost someone their habits, so they need a better reason than "it did not earn its
+place". The hover detail strip had one.
+
+- Removed the detail strip (see above). Nothing replaces it.
+- **Command Line Tools 6.4 broke the build**, independently of any change here. It
+  ships a macOS 27 SDK whose SwiftUI declares `@State` as a macro without shipping the
+  plugin that implements it, so every SwiftUI file fails to compile. Full Xcode has the
+  plugin; CLT does not. `scripts/select-sdk.sh` picks the newest SDK that predates the
+  macro requirement and returns nothing once the plugin appears, so the workaround
+  removes itself. Verified the failure was not ours by building the previous commit:
+  58 errors there too.
+
+  Worth noticing for the distribution model: "clone and build" means a toolchain update
+  can break every colleague at once, with no bad commit to point at. This is the first
+  instance.
+
 ## Versioning — 2026-09-09
 
 Tagged, but **no binary attached to the release**, deliberately: a downloaded `.app`
@@ -785,40 +804,26 @@ build here. The commit does.
 
 ## Raised, not yet decided
 
-- [~] **No way to read a long entry before sending it** — a detail strip was built on
-      2026-09-09, **on trial**: the request came with "I might revert it". Kept
-      deliberately self-contained so removing it is one edit and touches nothing else —
-      a `hovered` state, an `.onHover` on the row, and a `detail` view between the list
-      and the footer.
+- [~] **No way to read a long entry before sending it.** A detail strip was built for
+      this on 2026-09-09 and **removed again on 2026-09-15**, after a few days of real
+      use and once other people had started running the tool. Nothing replaced it.
 
-      Auto-scrolling the row was considered and argued against: the job here is to
-      *verify* a command before it goes to a production machine, and scrolling text
-      cannot be read at your own pace, scanned, or looked back at. Several rows moving
-      at once also makes a glanceable panel restless.
+      It worked, and the two decisions inside it were sound: it appeared only when the
+      text would not have fitted anyway, and a masked entry never qualified for one, so
+      there was no path by which it could print a secret. It was still removed. Reading
+      a long command before sending it turned out to be something wanted rarely, while
+      the strip was present on most rows most of the time, and a panel you glance at
+      pays for anything permanently on screen.
 
-      Two decisions inside it worth keeping if it stays, both verified:
-      - It appears only when the text would not have fitted anyway (multi-line, or over
-        32 characters), so short entries do not make the panel jump. Confirmed with a
-        7-character entry (no strip) and a 108-character command (strip, wrapped over
-        three lines).
-      - **A hidden entry gets no strip at all**, the same as a short one. The first
-        version showed dots plus a note explaining they were dots, which was only
-        height. Revealing the entry with the eye button brings the strip back with the
-        real text, which is the one state where it helps. Confirmed both ways.
+      The original problem stands and is unsolved: rows are one line and truncate, so a
+      300-character command is not fully visible anywhere. If it is picked up again,
+      note that hover was the wrong trigger — it fires constantly while you move
+      towards the row you actually want. Something deliberate, on a key or a button,
+      would not have that problem.
 
-        The security point still holds and is now structural rather than a special
-        case: there is no path by which the strip prints a masked secret, because a
-        masked entry never qualifies for a strip. Without that, hovering would have
-        been enough to read any password.
-
-      Original note:
-- [~] **No way to read a long entry before sending it.** Rows are one line and truncate
-      with an ellipsis. In real use the history held PowerShell commands and paths of
-      167, 306 and 383 characters, so what you are about to type into a production
-      server is not visible anywhere. For a password that hardly matters; for a command
-      it does. Options range from expanding a row on hover to a detail area under the
-      list. Mentioned 2026-09-09 and passed over in favour of closing the password
-      manager claim; recorded so it does not evaporate.
+      Auto-scrolling the row was considered at the time and argued against: the job is
+      to *verify* a command before it reaches a production machine, and scrolling text
+      cannot be read at your own pace, scanned, or looked back at.
 
 ## Deferred, deliberately — revisit later
 
