@@ -16,7 +16,7 @@ toolchain.
 
 ```sh
 xcode-select --install     # Swift toolchain, if you don't have it yet
-git clone <this repo> && cd mac-toothpaste
+git clone https://github.com/erymantho/mac-toothpaste.git && cd mac-toothpaste
 make cert                  # one-time: creates a local signing certificate
 make install               # builds, installs to ~/Applications, launches it
 ```
