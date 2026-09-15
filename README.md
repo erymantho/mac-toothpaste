@@ -127,6 +127,21 @@ that `make app` deletes, and two registered copies show up twice in Launchpad.
 If the app insists the permission is missing while System Settings shows it enabled,
 the entry is stale: `make reset-permission`, then `make install` and grant once.
 
+## How it was built
+
+Written collaboratively with [Claude Code](https://claude.com/claude-code), over two
+days, by someone who had not written Swift before. That is worth stating plainly rather
+than leaving you to guess from the commit history.
+
+It also explains [`PLAN.md`](PLAN.md), which is unusually detailed for a project this
+size: a development log of what was decided and why, including the approaches that were
+tried and failed. If you fork this and touch the typing engine, read section 3 first —
+it will save you the day it cost here.
+
+Everything in it was measured against real RDP sessions, real password managers and
+real hardware. Where a conclusion turned out to be wrong, the correction is in the log
+next to the original reasoning.
+
 ## Licence
 
 [MIT](LICENSE). 0xpaste is MIT too; no code was taken from it — this is a from-scratch

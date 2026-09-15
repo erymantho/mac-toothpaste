@@ -16,7 +16,9 @@ verified. Roughly 2,600 lines of Swift, a 1.6 MB app.
 
 **`PLAN.md` is the source of truth** for what was decided and why — it carries the
 measurements behind the typing engine, which are not guessable from the code. Keep it
-current when behaviour changes, and update this file when the architecture does.
+current when behaviour changes, and update this file when the architecture does. It is
+a public development log, so write entries for a stranger: state what was measured and
+what it means, not who asked for what.
 
 Not built, by decision rather than omission: the 0xpaste visual styling (phase 2), a
 configurable hotkey, and the click-to-target overlay.

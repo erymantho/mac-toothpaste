@@ -5,6 +5,29 @@ Native Swift, menu-bar only, MVP first then finetune.
 
 ---
 
+## What this document is
+
+A development log, kept as the work happened, over two days in September 2026. It
+records decisions and the reasons behind them — including the approaches that were
+tried and failed, which is most of the value.
+
+**If you only want to work on the code, read `CLAUDE.md` instead.** It carries the
+eleven macOS pitfalls in a form you can act on. This file is for when you want to know
+*why* something is the way it is, and what happens if you change it back.
+
+Some of it reads like a confession. That is deliberate. Several conclusions here were
+wrong on the first attempt and are corrected in place, with the original reasoning left
+visible — a test that proved nothing because Gatekeeper was disabled on the machine
+running it, a dead-key composition that looked right and silently ate the following
+space, a diagnosis credited to two changes when only one of them mattered. Those are
+worth more than a clean narrative would be.
+
+Written collaboratively with [Claude Code](https://claude.com/claude-code): the
+measurements, the failures and the corrections are all real and were run against real
+RDP sessions, real password managers and real hardware.
+
+---
+
 > Checkbox key: `[x]` done · `[~]` deliberately dropped, with the reason · `[·]` part
 > of a phase that was parked, not an open task. A bare `[ ]` is genuinely outstanding.
 
@@ -555,8 +578,8 @@ first one, which in a password is as damaging as any other.
 
 - **Start at login** — `SMAppService.mainApp`, toggled from the menu. A clipboard
   manager that is not running captures nothing, so every reboot otherwise left a hole
-  in the history. The menu reflects `requiresApproval` too, because the user's
-  decision in System Settings wins over ours.
+  in the history. The menu reflects `requiresApproval` too, because a decision made in
+  System Settings wins over ours.
 - **`load()` no longer overwrites what it could not read.** A missing file is a normal
   first run; a file that exists but fails to decode is moved to
   `history.unreadable-<timestamp>.json` before anything else is written. Verified by
@@ -601,7 +624,7 @@ sometimes miss and sometimes over-reach.
 - **Pinned entries survive expiry**, exactly as they survive the clear button.
   Pinning is a deliberate "keep this".
 - **Defaults to never.** Anything destructive that arrives switched on would delete
-  what the user already had, without being asked.
+  whatever was already stored, without being asked.
 
 Verified with seeded entries at 0.2h, 5h, 9h (pinned) and 48h against a one-hour
 limit: the recent one and the pinned one survived, the other two went.
@@ -633,7 +656,7 @@ Two obvious approaches failed first, both worth recording because they look righ
    *second* keystroke replaces the first — typing `ser` produced `er`. The bug is
    invisible unless you type more than one character.
 2. **Keep the field present but zero-height.** The test showed every keystroke lost —
-   but that test was invalid: the user was typing in another window at the time, so
+   but that test was invalid: someone was typing in another window at the time, so
    the synthetic keystrokes went there rather than to the panel. Whether a zero-height
    field can hold focus is therefore **unknown**, not disproven. Left untested because
    the approach below already works; worth revisiting if search ever needs ⌘V or
@@ -653,7 +676,7 @@ ever becomes load-bearing.
 collects loose keystrokes and stays open, so this was worth proving rather than
 assuming. It does not.
 
-| how the user leaves the panel | keystrokes go to |
+| how you leave the panel | keystrokes go to |
 |---|---|
 | clicking another window | that window — correct |
 | ⌘Tab | the app switched to — correct |
@@ -728,16 +751,16 @@ the rows are now the text and its three buttons.
 Driven with the mouse across all three displays in one continuous drag. The window held
 the grab offset exactly for the whole tour, and stayed put afterwards.
 
-**Two false alarms, both the user rather than the code.** A panel that appeared to jump
+**Two false alarms, both human input rather than the code.** A panel that appeared to jump
 back to its old position had been dragged there by hand; a set of keystrokes that
-seemed to vanish had gone to another window the user was typing in. On a machine
+seemed to vanish had gone to a window that was being typed in. On a machine
 someone is actively using, an unexplained state change is more likely to be them than a
 bug — worth suspecting before going looking in the code.
 
 **Open, and a real choice:** the panel can be dragged mostly off-screen and is
 remembered there. `isUsable` only requires 120×80 points of overlap on reopen, so a
 panel nudged 260 points below the screen edge comes back 260 points below the screen
-edge. Defensible — it is where the user put it — but a panel dragged off by accident is
+edge. Defensible — it is where it was put — but a panel dragged off by accident is
 then hard to find again. Clamping on reopen would fix that at the cost of no longer
 being able to park it half off deliberately.
 
@@ -839,8 +862,8 @@ item's right-click menu, or ⌘, once the window has focus.
       attempt is refused with the reason and recording continues; reset restores the
       default; all of it persists.
 
-      A newly registered shortcut **does** fire — confirmed by the user with a real
-      keypress, which is the only way: Carbon hotkeys do not respond to synthetic
+      A newly registered shortcut **does** fire — confirmed with a real keypress, which
+      is the only way: Carbon hotkeys do not respond to synthetic
       events (see phase 1e).
 
       **Still unverified**: the "already taken by another app" path, which needs a
