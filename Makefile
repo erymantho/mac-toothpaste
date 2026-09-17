@@ -1,6 +1,6 @@
 APP := dist/Toothpaste.app
 
-.PHONY: build app run cert install reset-permission verify clean
+.PHONY: build app run cert install reset-permission verify appearances clean
 
 # See scripts/select-sdk.sh: Command Line Tools 6.4 ships an SDK it cannot fully build
 # against. Expands to nothing when the toolchain is healthy.
@@ -34,6 +34,11 @@ reset-permission:
 
 verify: app
 	./scripts/verify-capture.sh
+
+# Both palettes, side by side, without switching the machine over. Writes PNGs to
+# dist/appearances and never puts a window on screen.
+appearances:
+	./scripts/render-appearances.sh
 
 clean:
 	rm -rf .build dist
