@@ -114,7 +114,8 @@ Sources/Toothpaste/
     PanelState.swift           what the panel shows while open (armed item, status)
     SettingsWindowController.swift
     SettingsView.swift         General / Typing profiles / Layout check
-    Theme.swift                the greys and status colours, per appearance
+    Theme.swift                the greys and status colours, per appearance,
+                               and which appearance the app renders in
   System/
     Hotkey.swift               Carbon RegisterEventHotKey
     FrontmostWatcher.swift     tracks the app a paste would go to, live
@@ -208,6 +209,11 @@ These are the non-obvious ones. Read before touching the relevant area.
     `Theme.swift` and every one of them states both values — add colours there, not
     inline. The same applies to `.orange` and `.green`: the system versions reach about
     2:1 against a light background, which is below readable.
+    `Settings.appearance` can override the system choice; it is applied by setting
+    `NSApp.appearance`, so every window follows at once and windows opened later inherit
+    it. Apply it from the delegate's launch, never from `Settings.init` — that object is
+    a stored property of the delegate, and whether `NSApp` exists that early depends on
+    the order of two lines in `main.swift`.
 13. **Test both appearances without switching the machine over.** Compiling the real
     sources against a throwaway `main.swift` renders any view offscreen through
     `NSHostingView` + `cacheDisplay` under a chosen `NSAppearance`, which is how the

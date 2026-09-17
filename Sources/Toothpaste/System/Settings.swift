@@ -16,6 +16,20 @@ final class Settings: ObservableObject {
         didSet { UserDefaults.standard.set(retentionHours, forKey: Self.retentionKey) }
     }
 
+    /// Follows the system unless told otherwise. See `AppAppearance`.
+    ///
+    /// Applied here so that changing it takes effect wherever it is changed from, but
+    /// *not* from `init`: this object is built as a stored property of the app delegate,
+    /// and whether `NSApp` exists that early depends on the order of two lines in
+    /// `main.swift` that have nothing to do with settings. The delegate applies the
+    /// stored choice at launch instead, where the application definitely exists.
+    @Published var appearance: AppAppearance {
+        didSet {
+            UserDefaults.standard.set(appearance.rawValue, forKey: Self.appearanceKey)
+            appearance.apply()
+        }
+    }
+
     @Published var hotkey: KeyCombo {
         didSet {
             guard let data = try? JSONEncoder().encode(hotkey) else { return }
@@ -24,6 +38,7 @@ final class Settings: ObservableObject {
     }
 
     private static let hotkeyKey = "hotkey"
+    private static let appearanceKey = "appearance"
     private static let maxHistoryKey = "maxHistory"
     private static let retentionKey = "retentionHours"
     static let historyChoices = [10, 25, 50, 75]
@@ -49,5 +64,7 @@ final class Settings: ObservableObject {
         retentionHours = UserDefaults.standard.integer(forKey: Self.retentionKey)
         hotkey = UserDefaults.standard.data(forKey: Self.hotkeyKey)
             .flatMap { try? JSONDecoder().decode(KeyCombo.self, from: $0) } ?? .fallback
+        appearance = UserDefaults.standard.string(forKey: Self.appearanceKey)
+            .flatMap(AppAppearance.init(rawValue:)) ?? .system
     }
 }

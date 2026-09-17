@@ -68,3 +68,44 @@ enum Theme {
         })
     }
 }
+
+/// Which appearance the app renders in, whatever the system is set to.
+///
+/// Worth being a preference rather than always following the system. The panel is a
+/// dark HUD by design and someone on a light desktop may well want to keep it that way,
+/// or the reverse; both are reasonable and neither is guessable from the machine's
+/// setting. Automatic stays the default, because that is the answer that is right
+/// without being asked.
+enum AppAppearance: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .system: return "Automatic"
+        case .light: return "Light"
+        case .dark: return "Dark"
+        }
+    }
+
+    /// `nil` is how AppKit spells "inherit". On the application object there is nothing
+    /// left to inherit from but the system, which is exactly what `.system` means.
+    private var nsAppearance: NSAppearance? {
+        switch self {
+        case .system: return nil
+        case .light: return NSAppearance(named: .aqua)
+        case .dark: return NSAppearance(named: .darkAqua)
+        }
+    }
+
+    /// Set on the application rather than on each window: the panel, the settings window
+    /// and onboarding then cannot drift apart, windows opened later inherit it without
+    /// being told, and open windows redraw immediately.
+    @MainActor
+    func apply() {
+        NSApp.appearance = nsAppearance
+    }
+}

@@ -25,6 +25,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var expiryTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Before any window exists, so nothing is ever drawn in the wrong appearance.
+        settings.appearance.apply()
         setUpStatusItem()
         store.maxItems = settings.maxItemsForStore
         setUpClipboardWatching()

@@ -845,6 +845,38 @@ be named `main.swift`, since top-level code is allowed nowhere else, and `HOME` 
 `CFFIXED_USER_HOME` must point at a scratch directory, because `HistoryStore` saves on a
 timer and would otherwise write the harness's mock items over the real `history.json`.
 
+### Appearance became a setting — Automatic, Light, Dark
+
+Asked for once the light palette existed, and it is the right shape for this: the panel
+is a dark HUD by design, so someone on a light desktop may still want it dark, and
+someone on a dark desktop may want it light against a bright remote session. Neither is
+guessable from the machine's setting. Automatic is the default.
+
+`Settings.appearance` stores the choice; `AppAppearance.apply()` sets `NSApp.appearance`
+— `nil` for Automatic, which is how AppKit spells "inherit" and on the application
+object leaves nothing to inherit from but the system. Setting it on the application
+rather than per window means the panel, the settings window and onboarding cannot drift
+apart, windows opened later inherit it without being told, and open windows redraw
+immediately.
+
+**Applied at the delegate's launch, deliberately not from `Settings.init`.** Settings is
+a stored property of the app delegate, so its initialiser runs before
+`applicationDidFinishLaunching`. Whether `NSApp` exists at that moment depends on
+`main.swift` creating `NSApplication.shared` before `AppDelegate()` — which it does, but
+that is two unrelated lines holding up a crash on launch. The delegate applies the
+stored choice as its first act instead, before any window exists.
+
+Verified the same way as the palette, with one change that mattered: the harness now
+picks an appearance by assigning to `Settings.appearance`, the path the picker uses, and
+its windows set no appearance of their own so they can only inherit from `NSApp`. With
+the machine on dark, Automatic rendered dark, Light rendered `NSAppearanceNameAqua` and
+Dark rendered `NSAppearanceNameDarkAqua`, for both the panel and the settings window.
+
+An earlier version of that harness rendered light as dark, because it called `apply()`
+and then constructed a `Settings`, whose initialiser applied the stored choice over the
+top. That is what surfaced the ordering problem above — worth recording, since the
+harness found a real defect rather than just taking pictures.
+
 **What this says about the distribution model.** Clone-and-build put the app on machines
 that are not this one, and the first thing that came back was not a crash or a typing
 failure but a setting nobody here had. Worth assuming there are more: anything read from

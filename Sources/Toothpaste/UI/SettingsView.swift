@@ -51,6 +51,13 @@ private struct GeneralTab: View {
             Text("Applies while the app is running. Nothing unpinned is written to disk in the first place — a restart already leaves only your pinned entries.")
                 .font(.caption).foregroundStyle(.secondary)
 
+            Picker("Appearance", selection: $settings.appearance) {
+                ForEach(AppAppearance.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            Text("Applies to the panel and every window. Automatic follows the system.")
+                .font(.caption).foregroundStyle(.secondary)
+
             Toggle(LaunchAtLogin.description, isOn: $launchAtLogin)
                 .onChange(of: launchAtLogin) {
                     launchAtLogin = LaunchAtLogin.set(launchAtLogin)
