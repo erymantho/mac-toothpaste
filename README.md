@@ -108,6 +108,9 @@ make install
 
 Your certificate does not change, so the Accessibility permission survives.
 
+[CHANGELOG.md](CHANGELOG.md) says what each version changed. Settings → General shows
+which one you are running, and the commit it was built from.
+
 ## Commands
 
 ```sh
@@ -115,6 +118,7 @@ make cert              # one-time: create the signing certificate
 make install           # build, install to ~/Applications, run from there
 make run               # alias for install
 make verify            # regression-check capture and persistence
+make appearances       # render every window in light and dark, to dist/appearances
 make reset-permission  # clear a stuck Accessibility grant for this bundle id
 make clean             # remove .build/ and dist/
 ```

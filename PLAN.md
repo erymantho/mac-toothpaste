@@ -783,6 +783,18 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## 1.1.1 — 2026-09-17
+
+Two changes, both below: the Light Mode palette and the appearance setting. Also the
+first release with a `CHANGELOG.md`, which exists because clone-and-build gives a
+colleague no release notes anywhere else — they pull a commit and get whatever is in it.
+It covers 1.0.0 and 1.1.0 retrospectively, reconstructed from the entries here.
+
+`make appearances` is the other lasting piece. The harness written to check the palette
+found a real defect on its second run, which was argument enough to keep it rather than
+throw it away: `scripts/render-appearances.sh` plus a renderer that compiles against the
+real sources. Run it after touching anything in `UI/`.
+
 ## The panel was unreadable in Light Mode — 2026-09-17
 
 Reported by a tester, not found here: on a machine set to the light system theme the
