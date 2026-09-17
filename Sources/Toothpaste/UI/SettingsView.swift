@@ -306,13 +306,13 @@ private struct LayoutCheckTab: View {
 
                 if missing.isEmpty {
                     Label("Every character in this text can be typed.", systemImage: "checkmark.circle")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Theme.ok)
                 } else {
                     Label(
                         "\(missing.count) character(s) cannot be typed and would be skipped:",
                         systemImage: "exclamationmark.triangle"
                     )
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Theme.warning)
                     Text(String(Array(Set(missing)).sorted()))
                         .font(.system(.title3, design: .monospaced))
                         .textSelection(.enabled)

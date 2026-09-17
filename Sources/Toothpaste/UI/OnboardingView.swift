@@ -63,7 +63,7 @@ struct OnboardingView: View {
                             systemImage: "exclamationmark.triangle"
                         )
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Theme.warning)
                         .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -90,7 +90,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Accessibility permission granted", systemImage: "checkmark.circle.fill")
                 .font(.callout.weight(.medium))
-                .foregroundStyle(.green)
+                .foregroundStyle(Theme.ok)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("How it works").font(.callout.weight(.semibold))

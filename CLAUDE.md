@@ -114,6 +114,7 @@ Sources/Toothpaste/
     PanelState.swift           what the panel shows while open (armed item, status)
     SettingsWindowController.swift
     SettingsView.swift         General / Typing profiles / Layout check
+    Theme.swift                the greys and status colours, per appearance
   System/
     Hotkey.swift               Carbon RegisterEventHotKey
     FrontmostWatcher.swift     tracks the app a paste would go to, live
@@ -198,6 +199,21 @@ These are the non-obvious ones. Read before touching the relevant area.
     placement must pick the screen the mouse is on, not the main one. And
     `screencapture -x out.png` grabs a single display — a window you are looking for is
     often on another, so pass `-D 1|2|3` before concluding something did not happen.
+12. **A view that paints its own background owes you both appearances.** The panel
+    draws its own surfaces instead of using the window's, but its text uses the
+    semantic colours, which follow the system appearance regardless. Fixed greys
+    therefore only appear to work: chosen against Dark Mode they turn into near-black
+    text on near-black fills the moment someone runs Light Mode. Nothing warns you,
+    because each half is individually reasonable. All surface colours live in
+    `Theme.swift` and every one of them states both values — add colours there, not
+    inline. The same applies to `.orange` and `.green`: the system versions reach about
+    2:1 against a light background, which is below readable.
+13. **Test both appearances without switching the machine over.** Compiling the real
+    sources against a throwaway `main.swift` renders any view offscreen through
+    `NSHostingView` + `cacheDisplay` under a chosen `NSAppearance`, which is how the
+    light palette above was checked. Point `HOME` and `CFFIXED_USER_HOME` at a scratch
+    directory when doing this — `HistoryStore` writes on a timer and will otherwise
+    save the harness's mock items over the real `history.json`.
 
 ## Divergences from 0xpaste
 

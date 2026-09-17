@@ -783,6 +783,74 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## The panel was unreadable in Light Mode — 2026-09-17
+
+Reported by a tester, not found here: on a machine set to the light system theme the
+panel came up as a black box with text that was almost invisible against it. The header,
+the rows, the footer — all of it near-black on near-black.
+
+**The cause is a split that looks reasonable on each side.** `PanelView` paints its own
+surfaces, because a rounded floating panel cannot use the window background. Those were
+fixed greys — `Color(white: 0.07)` for the panel, `0.11` and `0.155` for rows, `0.12`
+for the search field. The *text*, though, used the semantic colours `.primary`,
+`.secondary` and `.tertiary`, which resolve against the window's effective appearance no
+matter what the surfaces do. Nothing pinned the panel's appearance, so it inherited the
+system theme.
+
+In Dark Mode the semantic colours come out near-white on those near-black fills and the
+result looks designed. It was not: the two halves were simply never asked to disagree.
+Switch the system to light and the text flips to near-black while the surfaces stay put.
+
+**It survived to a release because every eye on it ran Dark Mode.** There is no compiler
+warning, no runtime complaint, and no way to notice from the code — each half is
+individually correct. The appearance is a property of the machine, so it only appears
+when the app reaches a machine configured differently. This is the first defect here
+found by someone other than the author, and it is the kind that only that can find.
+
+**The fix: `Theme.swift`, every colour stating both values.** A dynamic `NSColor` per
+colour, bridged into SwiftUI with `Color(nsColor:)`. Resolving through AppKit rather
+than reading `\.colorScheme` keeps it out of the views — no environment value has to be
+threaded down to a row for it to know which grey it is.
+
+The dark values are the originals, unchanged. The light ones invert the *direction* of
+each step while keeping its order, because a raised surface reads as lighter than its
+background in dark and darker than it in light:
+
+| | dark | light |
+|---|---|---|
+| panel surface | 0.07 | 0.98 |
+| row | 0.11 | 0.93 |
+| pinned row | 0.155 | 0.87 |
+| search field | 0.12 | 0.92 |
+| border | white @ 0.12 | black @ 0.15 |
+| separator | white @ 0.06 | black @ 0.09 |
+
+That inversion is the reason one set of greys cannot serve both, and it is what AppKit's
+own control colours do.
+
+**The status colours were wrong in the same way, and measurably so.** `.orange` marks a
+missing Accessibility permission and characters that cannot be typed; `.green` confirms
+the grant. Against the light panel surface `systemOrange` reaches **2.0:1** and
+`systemGreen` **2.0:1** — below readable for text someone has to act on. The light
+variants are the same hues taken down to **4.2:1** and **4.8:1**. In dark mode both keep
+the system colours. This also covered the settings window and onboarding, which are
+otherwise standard controls and adapt by themselves.
+
+**Verified by rendering, not by switching the machine over.** Compiling the real sources
+against a throwaway `main.swift` puts `PanelView` in an `NSHostingView` inside an
+offscreen window with a chosen `NSAppearance`, and `cacheDisplay` writes it to PNG. Four
+states came out — light and dark, idle and armed — with the dark pair confirming the
+existing look was untouched. Two things matter if this is done again: the harness must
+be named `main.swift`, since top-level code is allowed nowhere else, and `HOME` plus
+`CFFIXED_USER_HOME` must point at a scratch directory, because `HistoryStore` saves on a
+timer and would otherwise write the harness's mock items over the real `history.json`.
+
+**What this says about the distribution model.** Clone-and-build put the app on machines
+that are not this one, and the first thing that came back was not a crash or a typing
+failure but a setting nobody here had. Worth assuming there are more: anything read from
+the system rather than chosen by the code — appearance, accent colour, keyboard layout,
+display count, language — has only ever been tested at one value.
+
 ## Versioning — 2026-09-09
 
 Tagged, but **no binary attached to the release**, deliberately: a downloaded `.app`

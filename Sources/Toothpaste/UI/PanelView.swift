@@ -43,17 +43,17 @@ struct PanelView: View {
             VStack(alignment: .leading, spacing: 0) {
                 if state.armed != nil { armedBanner }
                 if searchVisible { queryDisplay }
-                Divider().opacity(0.3)
+                Theme.separator.frame(height: 1)
                 list
                 footer
             }
             .background(WindowDragBlocker())
         }
-        .background(Color(white: 0.07))
+        .background(Theme.surface)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(state.armed != nil ? Color.accentColor : Color.white.opacity(0.12),
+                .strokeBorder(state.armed != nil ? Color.accentColor : Theme.border,
                               lineWidth: state.armed != nil ? 2 : 1)
         )
         // Nothing else here is focusable, so the panel itself has to take focus for
@@ -141,7 +141,7 @@ struct PanelView: View {
             if !state.accessibilityGranted {
                 Text("no Accessibility permission — typing will do nothing")
                     .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Theme.warning)
             }
         }
         .padding(12)
@@ -208,7 +208,7 @@ struct PanelView: View {
         }
         .font(.system(size: 12, design: .monospaced))
         .padding(8)
-        .background(Color(white: 0.12))
+        .background(Theme.field)
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
@@ -274,7 +274,7 @@ struct PanelView: View {
     /// fill and a stripe instead, so the two never look like the same thing.
     private func rowFill(isSelected: Bool, isPinned: Bool) -> Color {
         if isSelected { return Color.accentColor.opacity(0.25) }
-        return isPinned ? Color(white: 0.155) : Color(white: 0.11)
+        return isPinned ? Theme.rowPinned : Theme.row
     }
 
     private func iconButton(_ symbol: String, action: @escaping () -> Void) -> some View {

@@ -40,7 +40,7 @@ struct HotkeyRecorder: View {
             if let message {
                 Text(message)
                     .font(.caption)
-                    .foregroundStyle(recording ? Color.secondary : Color.orange)
+                    .foregroundStyle(recording ? Color.secondary : Theme.warning)
             }
         }
         .onDisappear { stop() }
