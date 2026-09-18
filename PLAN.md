@@ -783,6 +783,17 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## 1.2.0 — 2026-09-18
+
+Updating from inside the app, detailed below. One release note that only applies once:
+every existing copy was built before `bundle.sh` stamped `ToothpasteSource`, so it cannot
+find its own source and cannot update itself. Those have to be rebuilt by hand one last
+time, and nothing in the app can say so — their build has no updater to say it with. That
+announcement goes out of band, once.
+
+Tag annotations became user-facing with this release: the app shows the annotation of the
+tag it is offering as the release notes for it. Written accordingly from here.
+
 ## Updating from inside the app — 2026-09-18
 
 Asked for after 1.1.1 shipped, and the argument that settled it is worth recording,

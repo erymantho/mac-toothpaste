@@ -11,7 +11,7 @@ Settings → General shows the running version *and the commit it was built from
 that in a bug report: with clone-and-build everyone sits on whatever commit they last
 pulled, so a version number alone does not identify a build.
 
-## Unreleased
+## 1.2.0 — 2026-09-18
 
 **Toothpaste can update itself.** Settings → General checks your clone's remote for a
 newer version tag at launch, shows the release notes for it, and offers a button that
@@ -33,6 +33,16 @@ clipboard is sent. Before this the app made no network calls at all, which was w
 giving up on purpose rather than quietly.
 
 The settings window is a little taller, so the new section fits without scrolling.
+
+**This release needs one manual update, and it is the last one.** Your current copy was
+built before it recorded where its source is, so it cannot update itself yet:
+
+```sh
+git pull && make install
+```
+
+After that the app takes over, and every tagged release from here shows up in Settings →
+General by itself.
 
 ## 1.1.1 — 2026-09-17
 

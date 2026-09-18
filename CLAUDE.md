@@ -44,6 +44,12 @@ nothing to try out in those.
 Local commits are fine either way. The gate is the push, because other people now pull
 from this repo and a version they receive should be one that has actually been used.
 
+**Tag annotations are user-facing copy.** The updater shows the annotation of the tag it
+is offering as that version's release notes, in Settings → General. Write them for
+someone deciding whether to take the update, and do not open with the version number —
+the UI already states it one line above, and repeating it wastes the first line of a
+small box.
+
 ## Stack
 
 - Swift 6 toolchain, SwiftUI for views, AppKit for the menu bar, panel window and
