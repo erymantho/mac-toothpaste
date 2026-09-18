@@ -32,6 +32,7 @@ private final class Renderer: NSObject, NSApplicationDelegate {
     private let profiles = ProfileStore()
     private let settings = Settings()
     private let accessibility = Accessibility()
+    private let updater = Updater()
     private var outDir = URL(fileURLWithPath: ".")
 
     func applicationDidFinishLaunching(_ note: Notification) {
@@ -48,7 +49,7 @@ private final class Renderer: NSObject, NSApplicationDelegate {
                 self.settings.appearance = choice
                 self.shoot(self.panel, 360, 320, "panel", choice)
                 self.shoot(self.armedPanel, 360, 320, "panel-armed", choice)
-                self.shoot(self.preferences, 760, 560, "settings", choice)
+                self.shoot(self.preferences, 760, 660, "settings", choice)
                 self.shoot(self.onboarding, 460, 430, "onboarding", choice)
             }
             print("\nwritten to \(self.outDir.path)")
@@ -92,7 +93,7 @@ private final class Renderer: NSObject, NSApplicationDelegate {
     private var preferences: AnyView {
         AnyView(SettingsView(
             settings: settings, profiles: profiles, store: store,
-            accessibility: accessibility, onHotkeyChange: { _ in nil }
+            accessibility: accessibility, updater: updater, onHotkeyChange: { _ in nil }
         ))
     }
 

@@ -11,6 +11,29 @@ Settings → General shows the running version *and the commit it was built from
 that in a bug report: with clone-and-build everyone sits on whatever commit they last
 pulled, so a version number alone does not identify a build.
 
+## Unreleased
+
+**Toothpaste can update itself.** Settings → General checks your clone's remote for a
+newer version tag at launch, shows the release notes for it, and offers a button that
+quits the app, pulls, rebuilds and starts the new version. About a minute, no terminal.
+The menu bar item shows it too, so it is visible without opening settings.
+
+The confirmation says two things plainly. Unpinned history is never written to disk, so
+it is gone after the restart — pin anything you still need first. And the button builds
+and runs whatever is in the repository, which is what `git pull && make install` has
+always done; the button only removes the terminal from in front of it. Doing it by hand
+still works exactly as before.
+
+If the build fails, the old version comes back by itself and the app reports what went
+wrong on next launch, with the full build log one click away.
+
+**Checking is the only thing Toothpaste does over the network**, and it can be switched
+off. It asks your own clone's remote for its version tags — nothing about you or your
+clipboard is sent. Before this the app made no network calls at all, which was worth
+giving up on purpose rather than quietly.
+
+The settings window is a little taller, so the new section fits without scrolling.
+
 ## 1.1.1 — 2026-09-17
 
 **Fixed: the panel was unreadable on a light system theme.** It painted its own

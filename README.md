@@ -101,12 +101,26 @@ payload.
 
 ## Updating
 
+Settings → General checks for a new version at launch and offers to install it. Pressing
+the button quits Toothpaste, pulls and rebuilds from the checkout you installed from, and
+starts the new version — about a minute, no terminal. It shows the release notes first,
+so you see what you are getting before you take it.
+
+Two things it says in the confirmation, and they are both true: unpinned history is never
+written to disk, so it is gone after the restart, and the button **builds and runs
+whatever is in the repository**. That is already what `git pull && make install` does —
+the button just removes the terminal from in front of it. If you would rather keep that
+step, switch off *Check for updates at launch* and do it by hand:
+
 ```sh
 git pull
 make install
 ```
 
-Your certificate does not change, so the Accessibility permission survives.
+Your certificate does not change, so the Accessibility permission survives either way.
+
+Checking for updates is the only thing Toothpaste does over the network. It asks your own
+clone's remote for its version tags; nothing about you or your clipboard is sent.
 
 [CHANGELOG.md](CHANGELOG.md) says what each version changed. Settings → General shows
 which one you are running, and the commit it was built from.
@@ -156,3 +170,7 @@ It types your clipboard contents as synthetic keystrokes, and that works in pass
 fields too, because Secure Input Mode does not block it. That is the point of the tool,
 and it also means it is functionally an autotyper. If you are putting it on a managed or
 shared machine, that is worth raising with whoever looks after it.
+
+It can also update itself, which means it can fetch code and run it. That is inherent to
+installing by building from source — you already trust the repository — but a button that
+does it without a terminal is worth knowing about for the same conversation.

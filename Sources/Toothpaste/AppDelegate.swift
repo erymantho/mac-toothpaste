@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let panelState = PanelState()
     private let settings = Settings()
     private let accessibility = Accessibility()
+    private let updater = Updater()
     private var onboardingWindow: SettingsWindowController?
     private var settingsWindow: SettingsWindowController?
     private var watcher: ClipboardWatcher?
@@ -28,6 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Before any window exists, so nothing is ever drawn in the wrong appearance.
         settings.appearance.apply()
         setUpStatusItem()
+        setUpUpdater()
         store.maxItems = settings.maxItemsForStore
         setUpClipboardWatching()
         setUpSettingsWindow()
@@ -174,6 +176,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusHoldUntil = Date().addingTimeInterval(seconds)
     }
 
+    /// Quitting mid-keystroke would leave half a password in whatever was being typed
+    /// into, so the updater asks before it takes the app down.
+    private func setUpUpdater() {
+        updater.blockedReason = { [weak self] in
+            self?.engine.isTyping == true ? "still typing — try again in a moment" : nil
+        }
+
+        guard settings.checkForUpdates else { return }
+        // Not at the instant of launch. Nothing here is urgent, and a network call
+        // during startup is the one that gets blamed when startup feels slow.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+            self?.updater.check()
+        }
+    }
+
     private func setUpSettingsWindow() {
         settingsWindow = SettingsWindowController { [weak self] in
             guard let self else { return AnyView(EmptyView()) }
@@ -183,6 +200,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     profiles: self.profiles,
                     store: self.store,
                     accessibility: self.accessibility,
+                    updater: self.updater,
                     onHotkeyChange: { [weak self] combo in self?.changeHotkey(to: combo) ?? nil }
                 )
             )
@@ -420,6 +438,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             entry.state = profiles.manualProfileID == profile.id ? .on : .off
             entry.indentationLevel = 1
             menu.addItem(entry)
+        }
+
+        // The one place someone who never opens settings will still see it.
+        if let version = updater.availableVersion {
+            let update = NSMenuItem(
+                title: "Update to \(version)…", action: #selector(openSettings), keyEquivalent: ""
+            )
+            update.target = self
+            menu.addItem(update)
         }
 
         let settingsItem = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")

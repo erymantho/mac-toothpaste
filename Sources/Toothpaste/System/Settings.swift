@@ -16,6 +16,15 @@ final class Settings: ObservableObject {
         didSet { UserDefaults.standard.set(retentionHours, forKey: Self.retentionKey) }
     }
 
+    /// Whether to ask the checkout's own remote for new version tags at launch.
+    ///
+    /// This is the only thing the app does over the network at all, which is why it gets
+    /// a switch rather than being assumed. Nothing about the user or the clipboard is
+    /// sent — it is `git fetch --tags` against whatever remote their clone already has.
+    @Published var checkForUpdates: Bool {
+        didSet { UserDefaults.standard.set(checkForUpdates, forKey: Self.checkForUpdatesKey) }
+    }
+
     /// Follows the system unless told otherwise. See `AppAppearance`.
     ///
     /// Applied here so that changing it takes effect wherever it is changed from, but
@@ -39,6 +48,7 @@ final class Settings: ObservableObject {
 
     private static let hotkeyKey = "hotkey"
     private static let appearanceKey = "appearance"
+    private static let checkForUpdatesKey = "checkForUpdates"
     private static let maxHistoryKey = "maxHistory"
     private static let retentionKey = "retentionHours"
     static let historyChoices = [10, 25, 50, 75]
@@ -66,5 +76,8 @@ final class Settings: ObservableObject {
             .flatMap { try? JSONDecoder().decode(KeyCombo.self, from: $0) } ?? .fallback
         appearance = UserDefaults.standard.string(forKey: Self.appearanceKey)
             .flatMap(AppAppearance.init(rawValue:)) ?? .system
+        // Defaults to on, and `object(forKey:)` rather than `bool(forKey:)` because the
+        // latter cannot tell "switched off" from "never set".
+        checkForUpdates = UserDefaults.standard.object(forKey: Self.checkForUpdatesKey) as? Bool ?? true
     }
 }

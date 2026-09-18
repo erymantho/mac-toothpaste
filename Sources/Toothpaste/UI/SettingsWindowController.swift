@@ -14,7 +14,7 @@ final class SettingsWindowController {
 
     init(
         title: String = "Toothpaste Settings",
-        size: NSSize = NSSize(width: 760, height: 560),
+        size: NSSize = NSSize(width: 760, height: 660),
         content: @escaping () -> AnyView
     ) {
         self.title = title

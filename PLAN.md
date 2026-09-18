@@ -783,6 +783,76 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## Updating from inside the app — 2026-09-18
+
+Asked for after 1.1.1 shipped, and the argument that settled it is worth recording,
+because the first answer here was the wrong one.
+
+**The security objection was overstated and got corrected.** The first response to "can
+the app pull and restart itself" was that the terminal step is a defence: a tool holding
+an Accessibility grant should not also fetch and execute code. That reads well and is
+mostly wrong. Clone-and-build *already* means "run whatever is in the repository" —
+every `git pull && make install` does it, and nobody reads the diff. A button does not
+introduce code execution from the network; it removes a terminal from in front of
+execution that already happens. What genuinely remains is narrower: it can happen while
+nobody is at a terminal, and a network-triggered prompt can invite a click. Both are
+answered by an explicit button that shows what it is about to install, not by leaving
+the whole thing out.
+
+**What made it cheap is that the pieces were already there.** `install.sh` quits the app
+before it copies and ends with `open`, so the restart needs no new code — a successful
+update brings the new version up by itself. And `make install` builds and signs in full
+*before* anything touches `~/Applications`, so a failed build leaves the installed copy
+intact. That ordering was chosen for other reasons and turns out to be exactly what an
+update button needs.
+
+**An app cannot supervise its own replacement.** Whatever was watching would be the thing
+being replaced. So `Updater.update()` spawns `scripts/update.sh` detached, hands it this
+process's pid, and terminates; the helper polls for that pid to vanish before it touches
+anything, and is reparented to launchd when it does. Its one real job beyond running
+`make install` is bringing the *old* app back when the build fails — nothing else will,
+because the app that would have done it is gone.
+
+**The checkout is the hard dependency**, and it is the reason this cannot be a downloaded
+update. `bundle.sh` now stamps `ToothpasteSource` beside `ToothpasteCommit`; without it
+the installed copy in `~/Applications` has no way to find the source it came from. A
+checkout that has moved is its own reported state, not a failure discovered halfway
+through.
+
+**Two things measured rather than assumed:**
+
+- `git fetch --tags --quiet origin` from the app took about six seconds after launch to
+  touch `FETCH_HEAD`, against a five-second delay — so the launch check runs and reaches
+  the network as intended. The delay exists so a network call is not competing with
+  startup.
+- `--sort=-v:refname` orders `v1.1.10` above `v1.1.2`, which plain string comparison does
+  not. The version comparison in `Updater` is component-wise for the same reason: a
+  version check that offers a downgrade is worse than none.
+
+**`GIT_TERMINAL_PROMPT=0` is not defensive, it is required.** Git run from an app bundle
+has no terminal, so a repository that wants credentials blocks forever on a prompt nobody
+can see, and the check never returns. Every git call also carries a timeout, because a
+hung fetch behind a corporate proxy is the likely failure and a spinner that never stops
+is worse than an error.
+
+**The posture change is stated, not smuggled.** The app made no network calls at all
+before this. It makes one now, `git fetch --tags` against the clone's own remote, and it
+has a switch. The confirmation says in those words that the button builds and runs
+whatever is in the repository, and that unpinned history will be gone after the restart —
+which is the cost of the pretty button that nobody mentions until they have paid it once.
+
+Both paths were run before this was called done: a successful update (pull, rebuild,
+reinstall, relaunch) and a failed one (bad checkout → marker written, old app reopened,
+exit 1).
+
+The seam worth proving separately is whether the helper survives the app that spawned it,
+because the failure mode there is an app that quits and never comes back. A parent doing
+exactly what `Updater.update()` does — `Process.run()` then `exit(0)` — was run against a
+child that polls for the parent's pid: the child saw the pid vanish and completed its work
+afterwards. Children are reparented to launchd rather than killed, as expected, but
+"expected" is not the standard to hold something to when the cost of being wrong is a tool
+that disappears.
+
 ## 1.1.1 — 2026-09-17
 
 Two changes, both below: the Light Mode palette and the appearance setting. Also the

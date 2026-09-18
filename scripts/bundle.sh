@@ -51,6 +51,12 @@ if ! git -C "$ROOT" diff --quiet HEAD 2>/dev/null; then
 fi
 plutil -replace ToothpasteCommit -string "$COMMIT" "$APP/Contents/Info.plist"
 
+# And where it was built from. The installed copy lives in ~/Applications and has no
+# other way to find the checkout, which is the one thing an in-app update needs: there
+# is nothing to download here, only the same `git pull` and `make install` the user ran
+# the first time.
+plutil -replace ToothpasteSource -string "$ROOT" "$APP/Contents/Info.plist"
+
 # Deliberately NOT `find-identity -v`: a self-signed root is untrusted, so -v filters
 # it out entirely. codesign signs with it regardless, and the resulting designated
 # requirement pins the *certificate* hash rather than the binary hash — which is the

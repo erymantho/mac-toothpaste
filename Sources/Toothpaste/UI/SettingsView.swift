@@ -7,13 +7,14 @@ struct SettingsView: View {
     @ObservedObject var profiles: ProfileStore
     @ObservedObject var store: HistoryStore
     @ObservedObject var accessibility: Accessibility
+    @ObservedObject var updater: Updater
     var onHotkeyChange: (KeyCombo) -> String?
 
     var body: some View {
         TabView {
             GeneralTab(
-                settings: settings, store: store,
-                accessibility: accessibility, onHotkeyChange: onHotkeyChange
+                settings: settings, store: store, accessibility: accessibility,
+                updater: updater, onHotkeyChange: onHotkeyChange
             )
                 .tabItem { Text("General") }
             ProfilesTab(profiles: profiles)
@@ -21,7 +22,7 @@ struct SettingsView: View {
             LayoutCheckTab(profiles: profiles)
                 .tabItem { Text("Layout check") }
         }
-        .frame(minWidth: 700, idealWidth: 760, minHeight: 520, idealHeight: 560)
+        .frame(minWidth: 700, idealWidth: 760, minHeight: 520, idealHeight: 660)
     }
 }
 
@@ -31,8 +32,10 @@ private struct GeneralTab: View {
     @ObservedObject var settings: Settings
     @ObservedObject var store: HistoryStore
     @ObservedObject var accessibility: Accessibility
+    @ObservedObject var updater: Updater
     var onHotkeyChange: (KeyCombo) -> String?
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
+    @State private var confirmingUpdate = false
 
     var body: some View {
         Form {
@@ -87,9 +90,120 @@ private struct GeneralTab: View {
                     .textSelection(.enabled)
             }
             }
+
+            Section {
+            updateRow
+
+            if let failure = updater.previousFailure {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("The last update did not finish", systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(Theme.warning)
+                    Text(failure)
+                        .font(.caption)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HStack {
+                        Button("Show log") { updater.revealLog() }
+                        Button("Dismiss") { updater.dismissFailure() }
+                    }
+                    .controlSize(.small)
+                }
+            }
+
+            Toggle("Check for updates at launch", isOn: $settings.checkForUpdates)
+            Text("The only thing Toothpaste does over the network, and it asks your own clone's remote for its version tags — nothing about you or your clipboard is sent. Updating then runs git pull and make install on your checkout, which means it builds and runs whatever is in the repository.")
+                .font(.caption).foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
         .padding()
+        .onAppear {
+            // Gated on the preference: someone who switched the check off did not switch
+            // it off only for launch.
+            if settings.checkForUpdates, updater.status == .idle { updater.check() }
+        }
+        .confirmationDialog(
+            "Update to \(updater.availableVersion ?? "the new version") and restart?",
+            isPresented: $confirmingUpdate,
+            titleVisibility: .visible
+        ) {
+            Button("Update and restart") { updater.update() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Toothpaste quits, pulls and rebuilds from your checkout, then starts again.\n\nUnpinned history is never written to disk, so it will be gone afterwards. Pin anything you still need first.\n\nThis builds and runs whatever is in the repository.")
+        }
+    }
+
+    /// Everything the update state can be, including the two that are not really about
+    /// updates: a checkout that has moved, and a check that could not reach anything.
+    /// Both are common enough that folding them into "failed" would cost someone an
+    /// afternoon.
+    @ViewBuilder
+    private var updateRow: some View {
+        switch updater.status {
+        case .idle, .upToDate:
+            LabeledContent("Updates") {
+                HStack {
+                    Text(updater.status == .upToDate ? "up to date" : "not checked yet")
+                        .foregroundStyle(.secondary)
+                    Button("Check now") { updater.check() }
+                }
+            }
+
+        case .checking:
+            LabeledContent("Updates") {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.small)
+                    Text("checking…").foregroundStyle(.secondary)
+                }
+            }
+
+        case let .available(version, notes):
+            VStack(alignment: .leading, spacing: 8) {
+                LabeledContent("Updates") {
+                    HStack {
+                        Text("\(version) is available")
+                        Button("Update and restart…") { confirmingUpdate = true }
+                    }
+                }
+                // What you are about to install, before you install it. This is the tag's
+                // own annotation, which is where this project writes its release notes.
+                if !notes.isEmpty {
+                    ScrollView {
+                        Text(notes)
+                            .font(.caption)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxHeight: 130)
+                }
+            }
+
+        case let .noCheckout(recorded):
+            VStack(alignment: .leading, spacing: 4) {
+                LabeledContent("Updates") {
+                    Text("no checkout found").foregroundStyle(Theme.warning)
+                }
+                Text(recorded.isEmpty
+                     ? "This copy was built before the source path was recorded. Run make install once from your checkout and updating from here will work."
+                     : "Built from \(recorded), which is not there any more. Move it back, or run make install from wherever it lives now.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+        case let .failed(reason):
+            VStack(alignment: .leading, spacing: 4) {
+                LabeledContent("Updates") {
+                    HStack {
+                        Text("check failed").foregroundStyle(Theme.warning)
+                        Button("Try again") { updater.check() }
+                    }
+                }
+                Text(reason)
+                    .font(.caption).foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 }
 
