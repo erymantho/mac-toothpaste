@@ -240,6 +240,8 @@ struct PanelView: View {
                     ForEach(Array(filtered.enumerated()), id: \.element.id) { index, item in
                         row(item, isSelected: index == selection, isArmed: state.armed?.id == item.id)
                             .id(item.id)
+                            // Kept as a fallback for any sliver the catcher does not
+                            // cover. Arming twice does the same thing as arming once.
                             .onTapGesture { onArm(item) }
                     }
                 }
@@ -256,24 +258,27 @@ struct PanelView: View {
     private func row(_ item: ClipItem, isSelected: Bool, isArmed: Bool) -> some View {
         // Masking off means the dots go, and with them the eye button that undid them.
         let hidden = settings.maskConcealed && item.concealed && !revealed.contains(item.id)
-        return HStack(spacing: 6) {
-            Text(hidden ? String(repeating: "•", count: min(item.characterCount, 20)) : item.preview)
-                .font(.system(size: 12, design: .monospaced))
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        return ZStack(alignment: .trailing) {
+            // The whole row is the click target, and it is caught in AppKit rather than
+            // by a tap gesture — see `ClickCatcher`. The buttons' width is reserved by a
+            // hidden copy so the catcher can cover everything without swallowing them.
+            HStack(spacing: 6) {
+                Text(hidden ? String(repeating: "•", count: min(item.characterCount, 20)) : item.preview)
+                    .font(.system(size: 12, design: .monospaced))
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-            iconButton(item.pinned ? "pin.fill" : "pin") { store.togglePin(item.id) }
-                .foregroundStyle(item.pinned ? Color.accentColor : Color.secondary)
-            if item.concealed, settings.maskConcealed {
-                iconButton(hidden ? "eye" : "eye.slash") {
-                    if hidden { revealed.insert(item.id) } else { revealed.remove(item.id) }
-                }
+                rowButtons(item, hidden: hidden).hidden()
             }
-            iconButton("doc.on.doc") { onCopy(item) }
-            iconButton("xmark") { store.remove(item.id) }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+            .overlay(ClickCatcher { onArm(item) })
+
+            // Above the catcher in z-order, which is what keeps them clickable.
+            rowButtons(item, hidden: hidden)
+                .padding(.horizontal, 8)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
         .background(rowFill(isSelected: isSelected, isPinned: item.pinned))
         .overlay(alignment: .leading) {
             // A stripe rather than a tint: pinned and selected can both be true, and
@@ -288,6 +293,20 @@ struct PanelView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .contentShape(Rectangle())
+    }
+
+    private func rowButtons(_ item: ClipItem, hidden: Bool) -> some View {
+        HStack(spacing: 6) {
+            iconButton(item.pinned ? "pin.fill" : "pin") { store.togglePin(item.id) }
+                .foregroundStyle(item.pinned ? Color.accentColor : Color.secondary)
+            if item.concealed, settings.maskConcealed {
+                iconButton(hidden ? "eye" : "eye.slash") {
+                    if hidden { revealed.insert(item.id) } else { revealed.remove(item.id) }
+                }
+            }
+            iconButton("doc.on.doc") { onCopy(item) }
+            iconButton("xmark") { store.remove(item.id) }
+        }
     }
 
     /// The accent background means "Return acts on this one". Pinning gets a lighter

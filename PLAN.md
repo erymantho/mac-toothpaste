@@ -831,6 +831,20 @@ here that means the row's delete button. Taken knowingly: a panel whose whole pu
 being clicked while another app is in front cannot also insist on being focused first,
 and the alternative costs a click on nearly every use.
 
+**`acceptsFirstMouse` on the hosting view was necessary and not sufficient.** It made
+the window accept the activating click, and `WindowDragHandle` — a real `NSView` — began
+moving the panel on the first one. A row two points below it still needed two, in the
+same window, with the same flag set. SwiftUI's tap gesture simply does not consult it.
+
+That is a sharp result because both halves were visible at once: the AppKit event path
+honoured the flag and the SwiftUI one did not. Rows now go through `ClickCatcher`, built
+on the same terms as the drag handle — overlay rather than background, buttons stacked
+above it, no first responder.
+
+The per-row buttons stay SwiftUI and so probably still want the panel active first. That
+is not a gap worth closing: it leaves the delete button behind an activating click, which
+is exactly the objection to accepting the first mouse, answered without a special case.
+
 **An available update announced itself nowhere.** It was in settings, and in the status
 item's right-click menu — both of which require already deciding to look. Reported as
 "the update does not come into view by itself", which is exactly right: a release could

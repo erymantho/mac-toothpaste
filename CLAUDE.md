@@ -281,14 +281,21 @@ These are the non-obvious ones. Read before touching the relevant area.
       someone drags the panel.
     - Do not delete `WindowDragBlocker`. The deployment target is macOS 14, where
       background dragging still works and brushing a row would otherwise move the panel.
-16. **The panel is usually not the key window, so it has to accept the first mouse.**
-    Arming an item means clicking into another window; the panel stays open but inactive,
-    and every click on the way back was being spent on activation rather than on the row
-    under the pointer. `FirstMouseHostingView` overrides `acceptsFirstMouse` so the click
-    that brings the panel forward also does what it was aimed at. The usual objection —
-    an activating click firing something unintended — applies to the row's delete button
-    and is accepted deliberately; a panel whose entire purpose is being clicked while
-    another app is in front cannot also demand to be focused first.
+16. **The panel is usually not the key window, so it has to accept the first mouse —
+    and `acceptsFirstMouse` alone will not do it.** Arming an item means clicking into
+    another window, so the panel is open and inactive for most of its life and every
+    return trip was spending a click on activation instead of on the row under the
+    pointer.
+    `FirstMouseHostingView` overrides `acceptsFirstMouse` on the hosting view, which is
+    necessary and not sufficient: **SwiftUI's tap gesture ignores it**. The proof was in
+    one window — a `WindowDragHandle` moved the panel on the first click while a row two
+    points below it still needed two. AppKit event paths honour the flag; SwiftUI
+    gestures do not.
+    So a row's click is caught by `ClickCatcher`, a real `NSView`, on the same terms as
+    the drag handle: overlay rather than background, with the per-row buttons stacked
+    above it. Those buttons are still SwiftUI, so they most likely still want the panel
+    active first — which quietly answers the objection to accepting the first mouse at
+    all, since the delete button is the one thing that stays behind an activating click.
 17. **Anything the app wants noticed has to reach the menu bar.** It is the only surface
     that is always on screen. The settings window is not somewhere anyone opens
     unprompted, which is how an available update sat unseen — it was in settings and in

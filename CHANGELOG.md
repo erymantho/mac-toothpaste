@@ -13,6 +13,12 @@ pulled, so a version number alone does not identify a build.
 
 ## Unreleased
 
+**Fixed, properly this time: clicking a row while another window was in front took two
+clicks.** The first attempt set the flag AppKit asks about, which turned out not to cover
+SwiftUI's own tap handling — dragging the panel started working on the first click while
+picking an entry still did not. Rows now take their click through the same path the drag
+handle uses.
+
 **Fixed: clicking the panel while another window was in front took two clicks.** The
 first one only brought the panel forward and was otherwise thrown away. That is the
 normal way this tool is used — you pick an item, click into the window you want it typed
