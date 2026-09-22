@@ -1061,6 +1061,22 @@ build here. The commit does.
 
 ## Raised, not yet decided
 
+- [~] **"Up to date" can be stale, and nothing says so.** The update check runs five
+      seconds after launch and, in the settings window, only when no check has run at
+      all — the guard is `status == .idle`. Open settings on an app that has been running
+      for a week and it reports the answer from a week ago, with no hint of its age. The
+      *Check now* button sits right beside it, so nobody is blocked, but they have to know
+      to distrust the line above it first.
+
+      Two ways out, and they are not exclusive: re-check on appear when the last one is
+      older than some interval, or show when the check happened rather than only what it
+      found. The second is smaller and fixes the honesty problem without adding a second
+      trigger for network access, which is the part that was made deliberate in 1.2.0.
+
+      Noticed while releasing 1.2.1, which is also the case that makes it concrete: the
+      app had already reported "up to date" before the tag existed.
+
+
 - [~] **No way to read a long entry before sending it.** A detail strip was built for
       this on 2026-09-09 and **removed again on 2026-09-15**, after a few days of real
       use and once other people had started running the tool. Nothing replaced it.
