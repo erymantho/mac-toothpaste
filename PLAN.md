@@ -783,6 +783,11 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## 1.2.1 — 2026-09-22
+
+One fix, detailed below, and the first release anyone receives through the updater rather
+than by being told to pull.
+
 ## The panel could not be moved — 2026-09-22
 
 Reported as "I can no longer drag the window", and it took three wrong turns to find,

@@ -11,7 +11,7 @@ Settings → General shows the running version *and the commit it was built from
 that in a bug report: with clone-and-build everyone sits on whatever commit they last
 pulled, so a version number alone does not identify a build.
 
-## Unreleased
+## 1.2.1 — 2026-09-22
 
 **Fixed: the panel could not be moved on macOS 27.** Dragging it by its header stopped
 working, and no setting or restart brought it back. The cause is outside this app:
