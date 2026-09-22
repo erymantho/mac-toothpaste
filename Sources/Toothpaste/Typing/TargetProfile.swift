@@ -25,6 +25,13 @@ struct TargetProfile: Codable, Identifiable, Equatable {
     /// Waited once before the first character. A window that has only just been
     /// clicked is not always ready to receive input yet, and the character that gets
     /// lost is the *first* one — which in a password is as bad as any other.
+    ///
+    /// For a remote session it is doing more than that: the click that chose the
+    /// destination still has to travel to the far side and be acted on there before the
+    /// remote caret lands in the field. Set too low, everything types correctly into
+    /// whatever had focus a moment ago. That is why it is per profile and why the
+    /// remote default is several times the local one — and why the right value depends
+    /// on someone's actual latency, not on a number chosen here.
     var initialDelayMs: UInt32
 
     var characterDelayMs: UInt32

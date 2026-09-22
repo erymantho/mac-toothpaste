@@ -67,8 +67,16 @@ final class PanelController {
 
         // Global monitors only see events delivered to *other* applications, so this
         // fires for clicks outside the panel and never for clicks inside it.
+        //
+        // Mouse *up*, not down. When an item is armed this click is also the one that
+        // puts the caret in the field being typed into, and a click is not finished
+        // until the button is released. On mouse-down the typing could begin while the
+        // button was still held — and in a remote session the click still has a network
+        // round trip ahead of it before the far side moves its caret at all. The
+        // keystrokes then arrive somewhere the caret has not reached yet. See
+        // `TargetProfile.initialDelayMs` for the rest of that wait.
         outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
-            matching: [.leftMouseDown, .rightMouseDown]
+            matching: [.leftMouseUp, .rightMouseUp]
         ) { [weak self] _ in
             // No default action: the panel stays put unless something is armed. It
             // closes on Esc, the hotkey, or the menu bar item.

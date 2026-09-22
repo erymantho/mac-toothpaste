@@ -5,6 +5,7 @@ struct PanelView: View {
     @ObservedObject var store: HistoryStore
     @ObservedObject var state: PanelState
     @ObservedObject var profiles: ProfileStore
+    @ObservedObject var settings: Settings
     var onArm: (ClipItem) -> Void
     var onOpenSettings: () -> Void
     var onCopy: (ClipItem) -> Void
@@ -253,7 +254,8 @@ struct PanelView: View {
     }
 
     private func row(_ item: ClipItem, isSelected: Bool, isArmed: Bool) -> some View {
-        let hidden = item.concealed && !revealed.contains(item.id)
+        // Masking off means the dots go, and with them the eye button that undid them.
+        let hidden = settings.maskConcealed && item.concealed && !revealed.contains(item.id)
         return HStack(spacing: 6) {
             Text(hidden ? String(repeating: "•", count: min(item.characterCount, 20)) : item.preview)
                 .font(.system(size: 12, design: .monospaced))
@@ -262,7 +264,7 @@ struct PanelView: View {
 
             iconButton(item.pinned ? "pin.fill" : "pin") { store.togglePin(item.id) }
                 .foregroundStyle(item.pinned ? Color.accentColor : Color.secondary)
-            if item.concealed {
+            if item.concealed, settings.maskConcealed {
                 iconButton(hidden ? "eye" : "eye.slash") {
                     if hidden { revealed.insert(item.id) } else { revealed.remove(item.id) }
                 }

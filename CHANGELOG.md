@@ -19,6 +19,21 @@ normal way this tool is used — you pick an item, click into the window you wan
 into, and come back — so the wasted click landed on almost every round trip. One click
 now does what it was aimed at.
 
+**Fixed: text arrived in the field you had selected before, not the one you clicked.**
+The click that picks the destination is also the click that puts the caret in the field,
+and typing was starting before it had landed — on mouse-down, and over a remote session
+while the click was still on its way to the far side. It now waits for the click to
+finish. If it still happens on a slow link, raise *Initial delay* for that profile in
+Settings → Typing profiles; the caption there now says so.
+
+This is what made a username and a password cost two extra clicks: the field had to be
+selected in advance, every time.
+
+**New: you can switch off masking of entries marked secret.** Password managers tag what
+they copy as concealed, and those entries show as dots. Settings → General now has a
+switch for it, on by default. It changes what is shown and nothing else — concealed
+entries are never written to disk either way.
+
 **An available update now shows in the menu bar.** The icon gains a small arrow and the
 tooltip names the version. Previously it was only visible in settings and in the menu bar
 item's right-click menu, both of which need you to go and look, so a release could sit

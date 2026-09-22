@@ -49,7 +49,7 @@ private final class Renderer: NSObject, NSApplicationDelegate {
                 self.settings.appearance = choice
                 self.shoot(self.panel, 360, 320, "panel", choice)
                 self.shoot(self.armedPanel, 360, 320, "panel-armed", choice)
-                self.shoot(self.preferences, 760, 660, "settings", choice)
+                self.shoot(self.preferences, 760, 720, "settings", choice)
                 self.shoot(self.onboarding, 460, 430, "onboarding", choice)
             }
             print("\nwritten to \(self.outDir.path)")
@@ -73,7 +73,7 @@ private final class Renderer: NSObject, NSApplicationDelegate {
     private var panel: AnyView {
         state.armed = nil
         return AnyView(PanelView(
-            store: store, state: state, profiles: profiles,
+            store: store, state: state, profiles: profiles, settings: settings,
             onArm: { _ in }, onOpenSettings: {}, onCopy: { _ in },
             onDisarm: {}, onClose: {}
         ))
@@ -84,7 +84,7 @@ private final class Renderer: NSObject, NSApplicationDelegate {
     private var armedPanel: AnyView {
         state.armed = store.items.first
         return AnyView(PanelView(
-            store: store, state: state, profiles: profiles,
+            store: store, state: state, profiles: profiles, settings: settings,
             onArm: { _ in }, onOpenSettings: {}, onCopy: { _ in },
             onDisarm: {}, onClose: {}
         ))

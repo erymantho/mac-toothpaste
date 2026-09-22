@@ -295,6 +295,17 @@ These are the non-obvious ones. Read before touching the relevant area.
     the right-click menu, and both required already going to look. `applyRestingGlyph()`
     owns the resting state, and every transient flag must restore *through* it rather
     than to a hardcoded icon, or the flag quietly erases whatever it was covering.
+18. **The click that picks the destination has to finish before typing starts.** It is
+    not only a selection: it is also the click that puts the caret in the field. So the
+    outside-click monitor matches mouse *up*, not down — on mouse-down the typing could
+    begin while the button was still held.
+    That is the cheap half. Over RDP the click still has a network round trip ahead of it
+    before the far side moves its own caret, and nothing local can observe when that has
+    happened. `TargetProfile.initialDelayMs` covers the rest, which is why it is per
+    profile and adjustable rather than a constant: too low and everything types perfectly
+    into whichever field had focus a moment earlier. Reported as "it types, but in the
+    wrong field, so I have to select it beforehand" — which is what makes a username and
+    a password cost two extra clicks.
 
 ## Divergences from 0xpaste
 
@@ -325,7 +336,11 @@ Be honest about this in the UI and the README:
   undo that.
 - `Settings.retentionHours` additionally forgets unpinned entries past a chosen age
   *within* a running session. Defaults to never.
-- Masking is **visual only** — it hides text on screen, it is not encryption.
+- Masking is **visual only** — it hides text on screen, it is not encryption. It is also
+  switchable, via `Settings.maskConcealed`, and defaults to on: a secret should not end up
+  on screen because nobody got round to deciding. Switching it off changes display and
+  nothing else — concealed entries stay out of `history.json` either way, and that rule
+  must not become reachable from a display preference.
 - Items marked concealed by the source app are **never written to disk** (memory only).
 - The app types your clipboard contents as keystrokes, which is functionally an
   autotyper. That is the point, but it deserves a clear-eyed mention.

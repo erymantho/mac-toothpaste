@@ -116,6 +116,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     store: self.store,
                     state: self.panelState,
                     profiles: self.profiles,
+                    settings: self.settings,
                     onArm: { [weak self] item in self?.arm(item) },
                     onOpenSettings: { [weak self] in self?.settingsWindow?.show() },
                     onCopy: { [weak self] item in self?.copyToPasteboard(item) },

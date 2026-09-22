@@ -783,6 +783,37 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## Typing was beating the caret — 2026-09-22
+
+Reported as "it types, but not in the right field — I have to select the field
+beforehand". The cost is concrete: a username and a password meant clicking each field
+first, so every credential pair carried two extra clicks in the flow this tool exists to
+shorten.
+
+**The click that picks the destination is doing two jobs.** It tells Toothpaste where to
+type, and it puts the caret in the field. Only the first was being waited for. The
+outside-click monitor matched mouse *down*, so delivery began while the button was still
+held — and the destination is resolved by polling `frontmostApplication`, which for an
+app that was already frontmost returns instantly. Typing then started against a window
+whose caret had not moved.
+
+Matching mouse *up* fixes the local half: a click is not finished until the button is
+released.
+
+**The remote half cannot be fixed by waiting for a local event at all.** Over RDP the
+click has a network round trip ahead of it before the far side even sees it, and the
+remote caret lands some unknown time after that. Nothing observable on this machine says
+when. `TargetProfile.initialDelayMs` already existed for a related reason — the first
+character being swallowed by a window that had only just been activated — and it is the
+right knob for this too. The remote default is 200 ms, chosen for window activation and
+not for a caret crossing a network, so it is very likely too low. The value that actually
+works depends on a particular link and has to be measured there rather than guessed here.
+
+Noted because it generalises: this is the second time a remote target has turned out to
+need a *longer* wait than any local reasoning would suggest, the first being the pacing
+work in section 3. Anything that looks instantaneous locally is a round trip remotely,
+and the code cannot tell the difference.
+
 ## Two things the 1.2.0 flow exposed — 2026-09-22
 
 Both surfaced by using the tool rather than by testing it, and both are about the panel

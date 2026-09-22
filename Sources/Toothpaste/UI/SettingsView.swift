@@ -22,7 +22,7 @@ struct SettingsView: View {
             LayoutCheckTab(profiles: profiles)
                 .tabItem { Text("Layout check") }
         }
-        .frame(minWidth: 700, idealWidth: 760, minHeight: 520, idealHeight: 660)
+        .frame(minWidth: 700, idealWidth: 760, minHeight: 520, idealHeight: 720)
     }
 }
 
@@ -52,6 +52,10 @@ private struct GeneralTab: View {
                 }
             }
             Text("Applies while the app is running. Nothing unpinned is written to disk in the first place — a restart already leaves only your pinned entries.")
+                .font(.caption).foregroundStyle(.secondary)
+
+            Toggle("Mask entries marked secret", isOn: $settings.maskConcealed)
+            Text("Password managers tag what they copy as concealed. Those entries show as dots until you reveal one. Switching this off shows them in full, on screen, to anyone looking at it — it does not change what is stored, because concealed entries are never written to disk either way.")
                 .font(.caption).foregroundStyle(.secondary)
 
             Picker("Appearance", selection: $settings.appearance) {
@@ -301,6 +305,8 @@ private struct ProfileEditor: View {
                     msField("Between characters", profile.characterDelayMs, range: 0...200, step: 1)
                     msField("Around modifiers", profile.modifierDelayMs, range: 0...200, step: 5)
                     Text("Remote sessions need noticeably larger values than local apps — a window to activate and a network round trip on top.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text("Initial delay is also how long the click that picked the destination gets to land. If text keeps arriving in the field you had selected *before*, rather than the one you clicked, this is the number to raise.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
 

@@ -16,6 +16,19 @@ final class Settings: ObservableObject {
         didSet { UserDefaults.standard.set(retentionHours, forKey: Self.retentionKey) }
     }
 
+    /// Whether entries a password manager marked secret are shown as dots.
+    ///
+    /// On by default, and the default is the point: a secret should not appear on screen
+    /// because nobody got round to deciding. Switching it off is a real choice with a
+    /// real consequence, so the settings window says what it is.
+    ///
+    /// This governs display only. Concealed entries are never written to disk either
+    /// way — that rule lives in `HistoryStore` and is deliberately not reachable from
+    /// here, because masking is a curtain and persistence is the actual secret-keeping.
+    @Published var maskConcealed: Bool {
+        didSet { UserDefaults.standard.set(maskConcealed, forKey: Self.maskConcealedKey) }
+    }
+
     /// Whether to ask the checkout's own remote for new version tags at launch.
     ///
     /// This is the only thing the app does over the network at all, which is why it gets
@@ -49,6 +62,7 @@ final class Settings: ObservableObject {
     private static let hotkeyKey = "hotkey"
     private static let appearanceKey = "appearance"
     private static let checkForUpdatesKey = "checkForUpdates"
+    private static let maskConcealedKey = "maskConcealed"
     private static let maxHistoryKey = "maxHistory"
     private static let retentionKey = "retentionHours"
     static let historyChoices = [10, 25, 50, 75]
@@ -79,5 +93,6 @@ final class Settings: ObservableObject {
         // Defaults to on, and `object(forKey:)` rather than `bool(forKey:)` because the
         // latter cannot tell "switched off" from "never set".
         checkForUpdates = UserDefaults.standard.object(forKey: Self.checkForUpdatesKey) as? Bool ?? true
+        maskConcealed = UserDefaults.standard.object(forKey: Self.maskConcealedKey) as? Bool ?? true
     }
 }
