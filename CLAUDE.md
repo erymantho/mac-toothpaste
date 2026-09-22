@@ -310,7 +310,10 @@ These are the non-obvious ones. Read before touching the relevant area.
     before the far side moves its own caret, and nothing local can observe when that has
     happened. `TargetProfile.initialDelayMs` covers the rest, which is why it is per
     profile and adjustable rather than a constant: too low and everything types perfectly
-    into whichever field had focus a moment earlier. Reported as "it types, but in the
+    into whichever field had focus a moment earlier. **Do not reach for it first.**
+    Measured on a real RDP link: the remote default of 200 ms was enough once the trigger
+    moved to mouse-up, so raising it would have masked the timing bug rather than fixing
+    it, and bought a visible pause before every paste. Reported as "it types, but in the
     wrong field, so I have to select it beforehand" — which is what makes a username and
     a password cost two extra clicks.
 

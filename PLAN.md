@@ -805,9 +805,16 @@ click has a network round trip ahead of it before the far side even sees it, and
 remote caret lands some unknown time after that. Nothing observable on this machine says
 when. `TargetProfile.initialDelayMs` already existed for a related reason — the first
 character being swallowed by a window that had only just been activated — and it is the
-right knob for this too. The remote default is 200 ms, chosen for window activation and
-not for a caret crossing a network, so it is very likely too low. The value that actually
-works depends on a particular link and has to be measured there rather than guessed here.
+right knob for this too, and the expectation here was that the remote default of 200 ms
+would prove too low, having been chosen for window activation rather than for a caret
+crossing a network.
+
+**Measured, and that expectation was wrong.** On a real RDP link, 200 ms unchanged was
+enough as soon as the trigger moved to mouse-up. The delay budget was never the shortfall
+— the trigger was, and letting the click finish recovered the whole gap on its own. Worth
+recording in that direction: the instinct when something remote misses is to add waiting,
+and here waiting would have masked a timing bug instead of fixing it, at the cost of a
+visible pause before every paste. The default stays at 200 ms.
 
 Noted because it generalises: this is the second time a remote target has turned out to
 need a *longer* wait than any local reasoning would suggest, the first being the pacing
