@@ -11,6 +11,17 @@ Settings → General shows the running version *and the commit it was built from
 that in a bug report: with clone-and-build everyone sits on whatever commit they last
 pulled, so a version number alone does not identify a build.
 
+## Unreleased
+
+**Fixed: the panel could not be moved on macOS 27.** Dragging it by its header stopped
+working, and no setting or restart brought it back. The cause is outside this app:
+macOS 27 no longer lets a SwiftUI-hosted window be dragged by its background, which is
+how the panel had always been moved. The header now starts the drag itself.
+
+Nothing else changes. The header is still the only place the panel can be dragged from,
+so brushing past a row cannot shift it, and the profile menu and settings button in the
+header still work as before.
+
 ## 1.2.0 — 2026-09-18
 
 **Toothpaste can update itself.** Settings → General checks your clone's remote for a

@@ -783,6 +783,65 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## The panel could not be moved — 2026-09-22
+
+Reported as "I can no longer drag the window", and it took three wrong turns to find,
+all of which are worth keeping because each one looked right at the time.
+
+**What it actually is.** On macOS 27, `isMovableByWindowBackground` does nothing for a
+window whose content is an `NSHostingView`. SwiftUI consumes the mouse-down before AppKit
+can start a drag. Every signal still says the feature is on: the window flag is set, and
+a hit test on the header returns the hosting view with `mouseDownCanMoveWindow == true`.
+The drag just never begins.
+
+**Wrong turn one: the colour change.** The panel's background had moved from
+`Color(white: 0.07)` to `Color(nsColor:)` in 1.1.1, which was the obvious suspect — if
+SwiftUI materialises a dynamic colour as a real `NSView`, that view could sit over the
+header and refuse the drag. Two otherwise identical panels, one per colour construction,
+both refused to drag. That exonerated the colour and it also produced the second wrong
+turn.
+
+**Wrong turn two: "then it is the machine".** Both test panels had failed, so the
+conclusion was that background dragging was broken machine-wide — plausible, because the
+reporter drives their displays through DisplayLink and had been hot-plugging a dock. It
+was wrong for a stupid reason: *both* test panels were SwiftUI-hosted. The experiment had
+varied the colour and held the hosting constant, and the hosting was the variable that
+mattered. A reboot changed nothing, which is what forced the re-examination.
+
+The bisect that worked varied the right thing: a panel whose content view is a plain
+`NSView` drawing its own text, against a panel hosting SwiftUI, on both the DisplayLink
+display and the built-in one. AppKit dragged on both screens; SwiftUI dragged on neither.
+Not the display, not the machine, not our code — the hosting.
+
+**Wrong turn three: the first attempt at the fix.** `performDrag(with:)` from a real
+`NSView` placed behind the header did not work either, and for a while that looked like
+the technique failing. It was the test: the handle had been given its colour with a
+SwiftUI `Color` layered *over* it, so the hosting view drew that tint and claimed the hit.
+The handle never saw a click. Made visible by having the handle draw its own layer colour
+instead, and then the distinction became measurable:
+
+- as a **background**, the handle receives clicks only where SwiftUI draws nothing at all.
+  In practice that was the twelve points of padding above the title — about fifteen points
+  of draggable strip, and nothing over any `Text`.
+- as an **overlay**, it wins everywhere it covers.
+
+**So the handle is an overlay, and the controls are stacked above it.** That was the
+remaining question, since the header holds the profile menu and the settings button. Both
+still respond with the handle underneath them, confirmed by clicking them in a mock header
+with a counter. A `ZStack` does not make its layers avoid each other, so the text layout
+carries a `.hidden()` copy of the controls to reserve their width — hidden views take part
+in layout and in nothing else, so a long profile name cannot collide with the title.
+
+`WindowDragBlocker` stays. The deployment target is macOS 14, where background dragging
+still works and brushing past a row would otherwise shift the panel. The two are now
+symmetric: the blocker says where a drag must not start, the handle says where it must.
+
+**What this cost, and what to take from it.** Three rounds of hands-on testing by the
+person reporting it, because none of this is visible from the code. The general lesson is
+narrower than "test more": a bisect only tells you about the variable you actually varied.
+Both failing panels felt like strong evidence and were nearly worthless, because the thing
+they had in common was the thing at fault.
+
 ## 1.2.0 — 2026-09-18
 
 Updating from inside the app, detailed below. One release note that only applies once:

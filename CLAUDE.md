@@ -119,6 +119,8 @@ Sources/Toothpaste/
   UI/
     PanelController.swift      NSPanel host, show/hide, remembered position
     PanelView.swift            search, list, rows, profile menu, clear button
+    WindowDragBlocker.swift    where dragging the panel must not start
+    WindowDragHandle.swift     where it must — see gotcha 15
     PanelState.swift           what the panel shows while open (armed item, status)
     SettingsWindowController.swift
     SettingsView.swift         General / Typing profiles / Layout check
@@ -260,6 +262,25 @@ These are the non-obvious ones. Read before touching the relevant area.
       or the current branch, which is what makes it safe to run unattended.
     - `git pull --ff-only`, so local commits or a dirty tree stop the update rather than
       being merged around.
+15. **`isMovableByWindowBackground` does nothing inside an `NSHostingView` on macOS 27.**
+    The panel became impossible to move, and it looks like a bug in our code from every
+    angle: the flag is still set, and `mouseDownCanMoveWindow` on the hit view still reads
+    `true`. SwiftUI simply consumes the mouse-down before AppKit can start a drag.
+    Bisected against a panel with a plain `NSView` content view on the same machine and
+    the same displays, which drags fine — so it is the hosting, not the window, not the
+    display, and not the code that changed. Do not go looking in `PanelController`.
+    - **The fix is `performDrag(with:)` from a real `NSView`** — `WindowDragHandle`.
+    - **It has to be an `overlay`, not a `background`.** As a background it only receives
+      clicks where SwiftUI draws nothing whatsoever; over a `Text` SwiftUI claims them,
+      which leaves a draggable strip of about fifteen points and nothing else. Measured.
+    - **Anything that must stay clickable goes above it in z-order**, and that works: a
+      `Button` and a `Menu` stacked over the handle both still respond. A `ZStack` does
+      not make its layers avoid each other, though, so reserve the controls' width with a
+      `.hidden()` copy inside the text layout or they will overlap.
+    - The handle must not become first responder, or type-to-search breaks the first time
+      someone drags the panel.
+    - Do not delete `WindowDragBlocker`. The deployment target is macOS 14, where
+      background dragging still works and brushing a row would otherwise move the panel.
 
 ## Divergences from 0xpaste
 

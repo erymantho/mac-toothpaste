@@ -122,29 +122,47 @@ struct PanelView: View {
         }
     }
 
+    /// The header is the panel's only drag surface, and since macOS 27 that takes a real
+    /// `NSView` over the text — see `WindowDragHandle`. The controls are then stacked
+    /// above the handle, which keeps them clickable.
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
-                Text("TOOTHPASTE").font(.system(size: 13, weight: .bold, design: .monospaced))
-                Spacer()
-                profileMenu
-                Button(action: onOpenSettings) {
-                    Image(systemName: "gearshape").font(.system(size: 11))
+        ZStack(alignment: .topTrailing) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text("TOOTHPASTE").font(.system(size: 13, weight: .bold, design: .monospaced))
+                    Spacer()
+                    // A hidden copy, purely to reserve the width the real controls need.
+                    // Without it the title and a long profile name would overlap, because
+                    // a ZStack does not make its layers avoid each other. Hidden views
+                    // take part in layout and in nothing else.
+                    headerControls.hidden()
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-            }
-            Text(state.statusLine)
-                .font(.system(size: 10, design: .monospaced))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            if !state.accessibilityGranted {
-                Text("no Accessibility permission — typing will do nothing")
+                Text(state.statusLine)
                     .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(Theme.warning)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                if !state.accessibilityGranted {
+                    Text("no Accessibility permission — typing will do nothing")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(Theme.warning)
+                }
             }
+            .padding(12)
+            .overlay(WindowDragHandle())
+
+            headerControls.padding(12)
         }
-        .padding(12)
+    }
+
+    private var headerControls: some View {
+        HStack(spacing: 6) {
+            profileMenu
+            Button(action: onOpenSettings) {
+                Image(systemName: "gearshape").font(.system(size: 11))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+        }
     }
 
     /// The one setting worth reaching for often. Everything else is set once per
