@@ -13,6 +13,14 @@ pulled, so a version number alone does not identify a build.
 
 ## Unreleased
 
+**Deleting a pinned entry now asks twice.** The delete button on a pinned row turns into
+a confirmation on the first click and clears itself after a few seconds, the way the
+*clear* button already did. Unpinned entries still go on one click: they were going to
+vanish at the next restart anyway, while a pinned entry is the one thing in the history
+that is meant to survive. This exists because everything in the panel now acts on the
+click that brings it forward, which is what makes it usable while another window has
+focus — and which also means a mis-aimed click can reach a delete button.
+
 **Fixed, properly this time: clicking a row while another window was in front took two
 clicks.** The first attempt set the flag AppKit asks about, which turned out not to cover
 SwiftUI's own tap handling — dragging the panel started working on the first click while

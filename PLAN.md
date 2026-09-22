@@ -865,6 +865,16 @@ is ephemeral — an unpinned entry lost this way was going to vanish on restart 
 pinned one is persisted and does not come back, and that is the case worth deciding
 about.
 
+**Decided: only pinned rows ask.** The delete button on a pinned row arms on the first
+click and clears itself after a few seconds, which is the pattern the `clear` button in
+the footer already established, so it is one behaviour in the panel rather than a second
+one. Unpinned rows go on a single click as before.
+
+The reasoning is the same one that governs persistence: pinning is how the user says
+"this outlives the session", so pinned is precisely the set where a silent loss is a real
+loss. Confirming both would have taxed the common case to protect the rare one, and a
+panel you glance at pays for every extra click.
+
 **An available update announced itself nowhere.** It was in settings, and in the status
 item's right-click menu — both of which require already deciding to look. Reported as
 "the update does not come into view by itself", which is exactly right: a release could

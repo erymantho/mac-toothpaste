@@ -301,7 +301,10 @@ These are the non-obvious ones. Read before touching the relevant area.
     both assumptions were made here and both were wrong once.
     The consequence is live rather than theoretical: a row's delete button fires on an
     activating click. The history is ephemeral, so an unpinned entry lost that way costs
-    little; a pinned one is persisted and does not come back.
+    little; a pinned one is persisted and does not come back. Only pinned rows therefore
+    ask twice — the same self-disarming confirmation the `clear` button uses. Guarding
+    both would have put friction on the case where nothing is at stake, which is most of
+    them.
 17. **Anything the app wants noticed has to reach the menu bar.** It is the only surface
     that is always on screen. The settings window is not somewhere anyone opens
     unprompted, which is how an available update sat unseen — it was in settings and in

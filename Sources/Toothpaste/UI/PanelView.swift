@@ -18,6 +18,15 @@ struct PanelView: View {
     @State private var selection: Int?
     @State private var revealed: Set<ClipItem.ID> = []
     @State private var confirmingClear = false
+    /// A pinned row whose delete button has been armed but not confirmed.
+    ///
+    /// Only pinned rows ask. Everything in the panel now acts on the click that brings it
+    /// forward, which is what makes it usable while another window has focus — and which
+    /// also means a mis-aimed activating click can land on a delete button. An unpinned
+    /// entry lost that way was going to vanish on the next restart regardless; a pinned
+    /// one is on disk and does not come back, and that is the only case worth a second
+    /// click.
+    @State private var confirmingRemove: ClipItem.ID?
 
     /// The search is a plain string this view maintains, not an `NSTextField`.
     ///
@@ -64,6 +73,7 @@ struct PanelView: View {
         .onAppear {
             selection = nil
             confirmingClear = false
+            confirmingRemove = nil
             query = ""
         }
         .onKeyPress { press in
@@ -93,7 +103,9 @@ struct PanelView: View {
             // Esc unwinds one step at a time. Closing the panel straight away would
             // leave you unsure whether anything was cleared, or whether the item you
             // had chosen is still waiting for a destination.
-            if confirmingClear {
+            if confirmingRemove != nil {
+                confirmingRemove = nil
+            } else if confirmingClear {
                 confirmingClear = false
             } else if state.armed != nil {
                 onDisarm()
@@ -248,6 +260,11 @@ struct PanelView: View {
                 .padding(.horizontal, 12)
                 .padding(.bottom, 8)
             }
+            .task(id: confirmingRemove) {
+                guard confirmingRemove != nil else { return }
+                try? await Task.sleep(for: .seconds(3))
+                if !Task.isCancelled { confirmingRemove = nil }
+            }
             .onChange(of: selection) {
                 guard let selection, filtered.indices.contains(selection) else { return }
                 proxy.scrollTo(filtered[selection].id)
@@ -305,8 +322,22 @@ struct PanelView: View {
                 }
             }
             iconButton("doc.on.doc") { onCopy(item) }
-            iconButton("xmark") { store.remove(item.id) }
+            removeButton(item)
         }
+    }
+
+    private func removeButton(_ item: ClipItem) -> some View {
+        let confirming = confirmingRemove == item.id
+        return iconButton(confirming ? "xmark.circle.fill" : "xmark") {
+            if !item.pinned || confirming {
+                store.remove(item.id)
+                confirmingRemove = nil
+            } else {
+                confirmingRemove = item.id
+            }
+        }
+        .foregroundStyle(confirming ? Theme.warning : Color.secondary)
+        .help(item.pinned ? "Pinned — click twice to delete" : "Delete")
     }
 
     /// The accent background means "Return acts on this one". Pinning gets a lighter
