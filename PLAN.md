@@ -848,9 +848,22 @@ honoured the flag and the SwiftUI one did not. Rows now go through `ClickCatcher
 on the same terms as the drag handle — overlay rather than background, buttons stacked
 above it, no first responder.
 
-The per-row buttons stay SwiftUI and so probably still want the panel active first. That
-is not a gap worth closing: it leaves the delete button behind an activating click, which
-is exactly the objection to accepting the first mouse, answered without a special case.
+The per-row buttons stay SwiftUI, and the guess here was that they would therefore still
+want the panel active first — which would have answered the objection to accepting the
+first mouse without needing a special case.
+
+**Measured, and wrong again.** A `Button` acts on the activating click; `.onTapGesture`
+on the same row did not. The dividing line is not SwiftUI against AppKit, it runs *inside*
+SwiftUI, between two control paths that look equivalent from the outside. Three
+assumptions have now been made about which clicks reach what in this window and all three
+were wrong; the only reliable move in this area has been to put two variants side by side
+and look.
+
+So the objection stands rather than being answered: a row's delete button fires on an
+activating click. What that costs is narrower than it first sounds, because the history
+is ephemeral — an unpinned entry lost this way was going to vanish on restart anyway. A
+pinned one is persisted and does not come back, and that is the case worth deciding
+about.
 
 **An available update announced itself nowhere.** It was in settings, and in the status
 item's right-click menu — both of which require already deciding to look. Reported as

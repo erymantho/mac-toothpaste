@@ -293,9 +293,15 @@ These are the non-obvious ones. Read before touching the relevant area.
     gestures do not.
     So a row's click is caught by `ClickCatcher`, a real `NSView`, on the same terms as
     the drag handle: overlay rather than background, with the per-row buttons stacked
-    above it. Those buttons are still SwiftUI, so they most likely still want the panel
-    active first — which quietly answers the objection to accepting the first mouse at
-    all, since the delete button is the one thing that stays behind an activating click.
+    above it.
+    **The split runs inside SwiftUI, not between SwiftUI and AppKit.** Measured in the
+    finished panel: a `Button` *does* act on the activating click, while `.onTapGesture`
+    on the same row did not. So `acceptsFirstMouse` is honoured by one SwiftUI control
+    path and ignored by another, which is worth knowing before assuming either way —
+    both assumptions were made here and both were wrong once.
+    The consequence is live rather than theoretical: a row's delete button fires on an
+    activating click. The history is ephemeral, so an unpinned entry lost that way costs
+    little; a pinned one is persisted and does not come back.
 17. **Anything the app wants noticed has to reach the menu bar.** It is the only surface
     that is always on screen. The settings window is not somewhere anyone opens
     unprompted, which is how an available update sat unseen — it was in settings and in
