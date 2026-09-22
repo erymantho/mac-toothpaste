@@ -119,6 +119,8 @@ Sources/Toothpaste/
   UI/
     PanelController.swift      NSPanel host, show/hide, remembered position
     PanelView.swift            search, list, rows, profile menu, clear button
+    ClickCatcher.swift         a row's click, caught in AppKit — see gotcha 16
+    WhatsNewView.swift         what an update did, on the launch it produced
     WindowDragBlocker.swift    where dragging the panel must not start
     WindowDragHandle.swift     where it must — see gotcha 15
     PanelState.swift           what the panel shows while open (armed item, status)
@@ -262,6 +264,15 @@ These are the non-obvious ones. Read before touching the relevant area.
       or the current branch, which is what makes it safe to run unattended.
     - `git pull --ff-only`, so local commits or a dirty tree stop the update rather than
       being merged around.
+    - **The outcome is reported by marker file, on the launch the update produced.**
+      `update.sh` writes `update-succeeded` with the version it replaced, or
+      `update-failed` with a reason; `Updater` reads and consumes them in `init`, and
+      `WhatsNewView` reports either. It has to work this way round because by the time
+      the outcome is known the app that asked for it no longer exists. An ordinary launch
+      finds no marker and says nothing.
+      Both outcomes need reporting, not just the failure. An update ends with the app
+      quietly reappearing, which is indistinguishable from a restart — and a failure was
+      worse still, leaving a note in a settings window nobody had a reason to open.
 15. **`isMovableByWindowBackground` does nothing inside an `NSHostingView` on macOS 27.**
     The panel became impossible to move, and it looks like a bug in our code from every
     angle: the flag is still set, and `mouseDownCanMoveWindow` on the hit view still reads

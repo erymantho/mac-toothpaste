@@ -13,6 +13,14 @@ pulled, so a version number alone does not identify a build.
 
 ## Unreleased
 
+**An update now tells you it worked.** Toothpaste used to finish an update by quietly
+reappearing, which looks exactly like a restart — so the one thing you wanted to know
+after pressing the button was the one thing it did not say. It now opens a window naming
+the version you came from and showing the release notes for the one you got.
+
+A failed update gets the same window, which is the more important half: it used to leave
+a note in the settings window and nothing else, so an update could fail in silence.
+
 **Deleting a pinned entry now asks twice.** The delete button on a pinned row turns into
 a confirmation on the first click and clears itself after a few seconds, the way the
 *clear* button already did. Unpinned entries still go on one click: they were going to

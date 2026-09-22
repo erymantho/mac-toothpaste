@@ -51,6 +51,8 @@ private final class Renderer: NSObject, NSApplicationDelegate {
                 self.shoot(self.armedPanel, 360, 320, "panel-armed", choice)
                 self.shoot(self.preferences, 760, 720, "settings", choice)
                 self.shoot(self.onboarding, 460, 430, "onboarding", choice)
+                self.shoot(self.whatsNew(failed: false), 460, 400, "whatsnew", choice)
+                self.shoot(self.whatsNew(failed: true), 460, 400, "whatsnew-failed", choice)
             }
             print("\nwritten to \(self.outDir.path)")
             exit(0)
@@ -99,6 +101,33 @@ private final class Renderer: NSObject, NSApplicationDelegate {
 
     private var onboarding: AnyView {
         AnyView(OnboardingView(accessibility: accessibility, onDone: {}))
+    }
+
+    /// `Updater` reads its markers once, in `init`, so the state to render is set up by
+    /// planting the file and then building one. Safe because the driving script points
+    /// `HOME` at a scratch directory; without that this would write into the real
+    /// support folder.
+    ///
+    /// Release notes come out empty here: a bare binary has no `ToothpasteSource`, so
+    /// there is no checkout to read a tag from. That is a real state of this window too.
+    private func whatsNew(failed: Bool) -> AnyView {
+        let support = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("com.michaelsmith.toothpaste", isDirectory: true)
+        try? FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+
+        let failure = support.appendingPathComponent("update-failed")
+        let success = support.appendingPathComponent("update-succeeded")
+        try? FileManager.default.removeItem(at: failure)
+        try? FileManager.default.removeItem(at: success)
+
+        if failed {
+            try? "the build failed. See update.log.".write(to: failure, atomically: true, encoding: .utf8)
+        } else {
+            try? "1.2.1".write(to: success, atomically: true, encoding: .utf8)
+        }
+
+        return AnyView(WhatsNewView(updater: Updater(), onDone: {}))
     }
 
     private func shoot(_ root: AnyView, _ width: CGFloat, _ height: CGFloat,

@@ -25,6 +25,7 @@ SUPPORT="$HOME/Library/Application Support/com.michaelsmith.toothpaste"
 APP="$HOME/Applications/Toothpaste.app"
 LOG="$SUPPORT/update.log"
 MARKER="$SUPPORT/update-failed"
+SUCCEEDED="$SUPPORT/update-succeeded"
 
 mkdir -p "$SUPPORT"
 # Truncated, not appended: only the last attempt is of any use, and an append-only log
@@ -50,6 +51,12 @@ for _ in $(seq 1 100); do
 done
 kill -0 "$PID" 2>/dev/null && fail "the app did not quit, so nothing was changed"
 
+# Read before anything is replaced: the app that comes back can then say what it grew
+# out of, and a version number on its own does not tell you an update happened.
+PREVIOUS="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" \
+	"$APP/Contents/Info.plist" 2>/dev/null || echo unknown)"
+echo "replacing version $PREVIOUS"
+
 [ -d "$ROOT/.git" ] || fail "no git checkout at $ROOT"
 [ -f "$ROOT/Makefile" ] || fail "no Makefile at $ROOT"
 cd "$ROOT" || fail "cannot enter $ROOT"
@@ -66,4 +73,8 @@ echo "--- make install ---"
 make install || fail "the build failed. See update.log."
 
 rm -f "$MARKER"
+# The app reads this once on the launch that install.sh just triggered, reports what
+# changed, and deletes it. Without it a successful update is indistinguishable from the
+# app having been restarted for any other reason.
+printf '%s' "$PREVIOUS" >"$SUCCEEDED"
 echo "=== update finished $(date '+%Y-%m-%d %H:%M:%S') ==="

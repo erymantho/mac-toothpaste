@@ -783,6 +783,35 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## An update that finishes in silence — 2026-09-22
+
+Raised after the first real in-app update: the app came back, and nothing said whether
+anything had changed. A menu-bar app has no window to reappear, so a successful update
+and an ordinary restart look identical — which makes the one question the button raises,
+*did that work*, the one question it does not answer.
+
+The failure path was worse and had gone unnoticed: `update.sh` wrote `update-failed` and
+the settings window reported it, but nobody opens the settings window without a reason,
+so a failed update was silent too. Same gap, higher stakes, and it had been sitting there
+since the updater shipped.
+
+**Reported by marker file, because the app that asked cannot be the app that answers.**
+By the time the outcome is known, the process that pressed the button is gone.
+`update.sh` writes `update-succeeded` with the version it replaced, or `update-failed`
+with a reason; `Updater` reads and consumes both in `init`, so the report belongs to the
+launch that produced it and an ordinary start says nothing.
+
+**The notes are read from the checkout rather than carried along.** The tag annotation is
+already the release notes shown before an update, so showing the same text afterwards
+costs nothing and closes the loop: what you were offered is what you got. Read at launch
+from `git tag --format=%(contents)`, and the window still makes sense without them — a
+missing checkout or an untagged build is a real state, not an error.
+
+Considered and rejected: a macOS notification, which is the conventional answer. It needs
+a permission the app does not otherwise ask for — there is exactly one today, and that is
+a property worth keeping — and notifications are muted and missed, so it would have
+traded one silent channel for another.
+
 ## Typing was beating the caret — 2026-09-22
 
 Reported as "it types, but not in the right field — I have to select the field

@@ -19,6 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let accessibility = Accessibility()
     private let updater = Updater()
     private var onboardingWindow: SettingsWindowController?
+    private var whatsNewWindow: SettingsWindowController?
     private var settingsWindow: SettingsWindowController?
     private var watcher: ClipboardWatcher?
 
@@ -30,6 +31,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.appearance.apply()
         setUpStatusItem()
         setUpUpdater()
+        // Before onboarding, so that if both want the screen the permission wins the
+        // front — it is the one that stops the app working.
+        reportUpdateOutcome()
         store.maxItems = settings.maxItemsForStore
         setUpClipboardWatching()
         setUpSettingsWindow()
@@ -198,6 +202,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
             self?.updater.check()
         }
+    }
+
+    /// Says whether the update worked, on the launch it produced.
+    ///
+    /// Only on that launch: both markers are consumed, so an ordinary start says nothing.
+    private func reportUpdateOutcome() {
+        guard updater.justUpdatedFrom != nil || updater.previousFailure != nil else { return }
+        updater.loadReleaseNotes()
+
+        whatsNewWindow = SettingsWindowController(
+            title: "Toothpaste \(AppVersion.short)",
+            size: NSSize(width: 460, height: 400)
+        ) { [weak self] in
+            guard let self else { return AnyView(EmptyView()) }
+            return AnyView(WhatsNewView(updater: self.updater) { [weak self] in
+                // Dismissing is also the acknowledgement, so a failure stops being
+                // reported in settings once it has actually been read.
+                self?.updater.dismissFailure()
+                self?.whatsNewWindow?.close()
+            })
+        }
+        whatsNewWindow?.show()
     }
 
     private func setUpSettingsWindow() {

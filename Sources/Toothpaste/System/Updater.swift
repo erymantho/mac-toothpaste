@@ -34,6 +34,19 @@ final class Updater: ObservableObject {
     /// only place a failure can be reported.
     @Published private(set) var previousFailure: String?
 
+    /// The version this launch replaced, when the launch was one `scripts/update.sh`
+    /// triggered. Read once and the marker removed, because the report it drives belongs
+    /// to that launch and no other.
+    ///
+    /// Without this an update finishes by the app quietly reappearing, which is
+    /// indistinguishable from it having been restarted for any other reason — and the one
+    /// thing someone wants after pressing an update button is to know it worked.
+    @Published private(set) var justUpdatedFrom: String?
+
+    /// The annotation of the tag matching the running version. The same text that was
+    /// shown before the update, now as what was actually received.
+    @Published private(set) var releaseNotes = ""
+
     /// Set by the app delegate. Returns a reason when an update must not happen yet —
     /// quitting mid-keystroke would leave half a password in someone's remote session,
     /// and the window between opening settings and clicking the button is small but not
@@ -52,6 +65,24 @@ final class Updater: ObservableObject {
 
     init() {
         previousFailure = try? String(contentsOf: Self.failureMarker, encoding: .utf8)
+        justUpdatedFrom = try? String(contentsOf: Self.successMarker, encoding: .utf8)
+        if justUpdatedFrom != nil {
+            try? FileManager.default.removeItem(at: Self.successMarker)
+        }
+    }
+
+    /// Read from the checkout rather than carried through the update, so the notes are
+    /// whatever the tag actually says now. Silent when there is no checkout or no tag for
+    /// this version: the report is still worth showing without them.
+    func loadReleaseNotes() {
+        guard let checkout = Self.checkout else { return }
+        let tag = "v\(AppVersion.short)"
+        Task.detached(priority: .utility) {
+            let result = Self.git(["tag", "--list", "--format=%(contents)", tag],
+                                  in: checkout, timeout: 10)
+            let notes = result.ok ? result.output : ""
+            await MainActor.run { self.releaseNotes = notes }
+        }
     }
 
     // MARK: - Checking
@@ -178,6 +209,10 @@ final class Updater: ObservableObject {
 
     private nonisolated static var failureMarker: URL {
         supportDirectory.appendingPathComponent("update-failed")
+    }
+
+    private nonisolated static var successMarker: URL {
+        supportDirectory.appendingPathComponent("update-succeeded")
     }
 
     nonisolated static var log: URL {
