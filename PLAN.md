@@ -783,6 +783,35 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## Two things the 1.2.0 flow exposed — 2026-09-22
+
+Both surfaced by using the tool rather than by testing it, and both are about the panel
+being used while something else has focus — which is not an edge case here, it is the
+design.
+
+**The first click was being spent on activation.** Arming an item means clicking into
+another window, so the panel is routinely open and not key. Every click on the way back
+went on making it key, and the row under the pointer needed a second one. `NSView`
+swallows the activating click unless it says otherwise; `FirstMouseHostingView` overrides
+`acceptsFirstMouse` on the panel's hosting view so the click does what it was aimed at.
+
+The standard objection is that an activating click can fire something unintended, and
+here that means the row's delete button. Taken knowingly: a panel whose whole purpose is
+being clicked while another app is in front cannot also insist on being focused first,
+and the alternative costs a click on nearly every use.
+
+**An available update announced itself nowhere.** It was in settings, and in the status
+item's right-click menu — both of which require already deciding to look. Reported as
+"the update does not come into view by itself", which is exactly right: a release could
+sit unnoticed indefinitely and the mechanism added in 1.2.0 would look like it had done
+its job. The menu bar icon now gains an arrow and names the version in its tooltip,
+because that is the only surface always on screen.
+
+That put a shape on a smaller hazard too. `flagWarning` swaps the icon for six seconds
+and used to restore a hardcoded default, which would have erased the update marker
+whenever a typing warning happened to overlap it. Transient flags now restore through
+`applyRestingGlyph()`, which owns what the resting state actually is.
+
 ## 1.2.1 — 2026-09-22
 
 One fix, detailed below, and the first release anyone receives through the updater rather

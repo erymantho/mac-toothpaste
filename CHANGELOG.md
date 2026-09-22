@@ -11,6 +11,19 @@ Settings → General shows the running version *and the commit it was built from
 that in a bug report: with clone-and-build everyone sits on whatever commit they last
 pulled, so a version number alone does not identify a build.
 
+## Unreleased
+
+**Fixed: clicking the panel while another window was in front took two clicks.** The
+first one only brought the panel forward and was otherwise thrown away. That is the
+normal way this tool is used — you pick an item, click into the window you want it typed
+into, and come back — so the wasted click landed on almost every round trip. One click
+now does what it was aimed at.
+
+**An available update now shows in the menu bar.** The icon gains a small arrow and the
+tooltip names the version. Previously it was only visible in settings and in the menu bar
+item's right-click menu, both of which need you to go and look, so a release could sit
+unnoticed.
+
 ## 1.2.1 — 2026-09-22
 
 **Fixed: the panel could not be moved on macOS 27.** Dragging it by its header stopped

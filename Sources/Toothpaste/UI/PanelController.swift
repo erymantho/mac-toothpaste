@@ -11,6 +11,21 @@ final class KeyablePanel: NSPanel {
     override var canBecomeMain: Bool { false }
 }
 
+/// Acts on the click that brings the panel forward, rather than swallowing it.
+///
+/// Without this the panel takes two clicks whenever it is not key: one to take focus and
+/// one to do the thing. That is not an edge case here, it is the main flow — arming an
+/// item means clicking into another window, which leaves the panel open but inactive, so
+/// every return trip costs a wasted click.
+///
+/// The usual argument against accepting the first mouse is that an activating click can
+/// trigger something the user did not mean. That applies to the row's delete button, and
+/// it is accepted: the panel is a transient picker whose whole point is being clicked
+/// while something else is in front.
+final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+}
+
 /// File-scope so the window-move observer can read it without crossing the main
 /// actor; it is a constant string, not state.
 private let panelOriginKey = "panelOrigin"
@@ -45,7 +60,7 @@ final class PanelController {
 
         // Rebuilt every time: the header reports the current target app and profile,
         // and those change between openings.
-        panel.contentView = NSHostingView(rootView: makeContent())
+        panel.contentView = FirstMouseHostingView(rootView: makeContent())
 
         position(panel)
         panel.makeKeyAndOrderFront(nil)

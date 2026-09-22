@@ -183,6 +183,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.engine.isTyping == true ? "still typing — try again in a moment" : nil
         }
 
+        // The check finishes long after the status item is built, so the glyph has to
+        // follow it rather than be read once.
+        updater.$status
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.applyRestingGlyph() }
+            }
+            .store(in: &cancellables)
+
         guard settings.checkForUpdates else { return }
         // Not at the instant of launch. Nothing here is urgent, and a network call
         // during startup is the one that gets blamed when startup feels slow.
@@ -364,8 +372,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(6))
-            self.setStatusGlyph(Self.menuBarIcon)
-            self.statusItem?.button?.toolTip = nil
+            self.applyRestingGlyph()
         }
     }
 
@@ -375,6 +382,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// and nothing else changes.
     private static let menuBarIcon = "\u{1F4DD}"      // memo
     private static let menuBarWarning = "\u{26A0}\u{FE0F}" // warning
+    private static let menuBarUpdate = "\u{1F4DD}\u{2191}" // memo with an up arrow
+
+    /// What the menu bar shows when nothing transient is being flagged.
+    ///
+    /// An update has to announce itself somewhere the user is already looking. The menu
+    /// bar item is the only surface that is always on screen — the settings window is
+    /// not somewhere anyone goes unprompted, which is exactly how a release can sit
+    /// unnoticed for a fortnight.
+    private func applyRestingGlyph() {
+        if let version = updater.availableVersion {
+            setStatusGlyph(Self.menuBarUpdate)
+            statusItem?.button?.toolTip = "Toothpaste \(version) is available"
+        } else {
+            setStatusGlyph(Self.menuBarIcon)
+            statusItem?.button?.toolTip = nil
+        }
+    }
 
     /// Emoji need a nudge: the system menu bar font renders them small, and they sit
     /// slightly high without a baseline offset.
@@ -395,7 +419,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.button?.action = #selector(statusItemClicked)
         item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
         statusItem = item
-        setStatusGlyph(Self.menuBarIcon)
+        applyRestingGlyph()
     }
 
     /// Left-click opens the panel, right-click (or ⌃-click) opens the menu. Assigning

@@ -281,6 +281,20 @@ These are the non-obvious ones. Read before touching the relevant area.
       someone drags the panel.
     - Do not delete `WindowDragBlocker`. The deployment target is macOS 14, where
       background dragging still works and brushing a row would otherwise move the panel.
+16. **The panel is usually not the key window, so it has to accept the first mouse.**
+    Arming an item means clicking into another window; the panel stays open but inactive,
+    and every click on the way back was being spent on activation rather than on the row
+    under the pointer. `FirstMouseHostingView` overrides `acceptsFirstMouse` so the click
+    that brings the panel forward also does what it was aimed at. The usual objection —
+    an activating click firing something unintended — applies to the row's delete button
+    and is accepted deliberately; a panel whose entire purpose is being clicked while
+    another app is in front cannot also demand to be focused first.
+17. **Anything the app wants noticed has to reach the menu bar.** It is the only surface
+    that is always on screen. The settings window is not somewhere anyone opens
+    unprompted, which is how an available update sat unseen — it was in settings and in
+    the right-click menu, and both required already going to look. `applyRestingGlyph()`
+    owns the resting state, and every transient flag must restore *through* it rather
+    than to a hardcoded icon, or the flag quietly erases whatever it was covering.
 
 ## Divergences from 0xpaste
 
