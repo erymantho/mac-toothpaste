@@ -49,6 +49,11 @@ is offering as that version's release notes, in Settings → General. Write them
 someone deciding whether to take the update, and do not open with the version number —
 the UI already states it one line above, and repeating it wastes the first line of a
 small box.
+Wrap them for git, not for the window. `Updater.reflowed` joins the lines within a
+paragraph before anything displays them, because re-wrapping already-wrapped text to a
+narrower box sheds two or three words onto a line of their own and reads as broken
+alignment. Blank lines still separate paragraphs, and an indented or bulleted line is
+left where it is.
 
 ## Stack
 

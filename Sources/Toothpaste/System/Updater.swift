@@ -80,7 +80,7 @@ final class Updater: ObservableObject {
         Task.detached(priority: .utility) {
             let result = Self.git(["tag", "--list", "--format=%(contents)", tag],
                                   in: checkout, timeout: 10)
-            let notes = result.ok ? result.output : ""
+            let notes = result.ok ? Self.reflowed(result.output) : ""
             await MainActor.run { self.releaseNotes = notes }
         }
     }
@@ -122,7 +122,41 @@ final class Updater: ObservableObject {
         // `%(contents)` is the tag's annotation, which is where this project's release
         // notes actually live — see the messages on v1.1.0 and v1.1.1.
         let notes = git(["tag", "--list", "--format=%(contents)", newest], in: checkout, timeout: 10)
-        return .available(version: version, notes: notes.output)
+        return .available(version: version, notes: reflowed(notes.output))
+    }
+
+    /// Joins the lines within a paragraph so the view can wrap the text to whatever width
+    /// it has.
+    ///
+    /// Tag annotations are hard-wrapped for a terminal, and re-wrapping an already-wrapped
+    /// paragraph to a narrower width leaves a trail of orphans — every line that no longer
+    /// fits sheds two or three words onto a line of its own. It reads as broken alignment
+    /// rather than as wrapping, which is how it was reported.
+    ///
+    /// Blank lines keep separating paragraphs, and a line that is indented or starts a
+    /// bullet is left where it is: there the break was meant.
+    private nonisolated static func reflowed(_ text: String) -> String {
+        text.components(separatedBy: "\n\n")
+            .map { paragraph in
+                var lines: [String] = []
+                for raw in paragraph.components(separatedBy: "\n") {
+                    let trimmed = raw.trimmingCharacters(in: .whitespaces)
+                    guard !trimmed.isEmpty else { continue }
+
+                    let deliberate = raw.hasPrefix(" ") || raw.hasPrefix("\t")
+                        || trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ")
+                        || trimmed.hasPrefix("\u{2022} ")
+
+                    if deliberate || lines.isEmpty {
+                        lines.append(deliberate ? raw : trimmed)
+                    } else {
+                        lines[lines.count - 1] += " " + trimmed
+                    }
+                }
+                return lines.joined(separator: "\n")
+            }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n\n")
     }
 
     /// Compares `1.2.10` against `1.2.9` component by component. Comparing the strings

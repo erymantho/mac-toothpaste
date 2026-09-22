@@ -807,6 +807,16 @@ costs nothing and closes the loop: what you were offered is what you got. Read a
 from `git tag --format=%(contents)`, and the window still makes sense without them — a
 missing checkout or an untagged build is a real state, not an error.
 
+**The notes had to be reflowed to be readable.** A tag annotation is hard-wrapped at
+about seventy characters because that is what git wants, and re-wrapping already-wrapped
+text to a narrower box leaves every over-long line shedding two or three words onto a
+line of its own. Reported as the alignment being wrong, which is exactly what it looks
+like — the eye reads the orphans as a broken left edge rather than as wrapping.
+
+Fixed at the source in `Updater` rather than in the view, so the block in the settings
+window that shows the notes *before* an update gets it too. That one is narrower and had
+the same fault, unnoticed because nobody had read it at length yet.
+
 Considered and rejected: a macOS notification, which is the conventional answer. It needs
 a permission the app does not otherwise ask for — there is exactly one today, and that is
 a property worth keeping — and notifications are muted and missed, so it would have
