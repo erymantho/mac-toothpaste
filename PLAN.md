@@ -783,6 +783,192 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## A third review, stopped part-way — 2026-09-23
+
+The fixes from the second review were put through a third round with the same shape. Its
+first attempt produced nothing at all: every reviewer lost its connection to the API
+mid-run. The second attempt was stopped deliberately once one of its four reviewers had
+finished — the one testing the updater and the markers, which was the riskiest ground.
+The other three areas — the drag card, the parser extensions and the documentation — were
+checked by hand instead: renders of every window in both appearances, the parser harness
+with new cases for each new rule, and the tag annotation run through git and the parser.
+Worth saying plainly, because "reviewed" in the earlier entries meant something stronger.
+
+What the updater review confirmed, by running it: a tag moved on the remote no longer stops
+the check — the old command still fails in the same setup, so the test is valid — and the
+failure marker's date rule, the marker order in `update.sh` and the cleaned-up version
+capture all behave as intended, down to how `cp`, `codesign` and `ditto` treat the binary's
+date.
+
+What it found:
+
+- **The fix for the success-marker race opened a second gap.** Writing the marker before
+  the build closed the race, but for the length of the build any copy of the app that
+  started — an old one reopened because it had vanished, or the same one after the update
+  was cut off — would take the marker, report an update that had not happened to it, and
+  leave the real new version to start silently. Reproduced with a stub build that launched
+  an old binary halfway. The success marker now counts only when it is older than the
+  binary reading it, the mirror image of the failure rule, and is otherwise left for the
+  launch it belongs to.
+- One comparison of version strings as text, where every other comparison parses them.
+- When two tags named the same version, the one kept was chosen by spelling, so a
+  lightweight `v1.3.0` could hide an annotated `1.3.0` and its notes. The annotated one is
+  kept now.
+
+## A second review, and the entry that follows the pointer — 2026-09-23
+
+**The second review** took the same shape as the first — independent reviewers, each
+finding put to three refuters — but aimed at what the first round's fixes had changed, plus
+the draft annotation for the next tag. Twenty-six findings survived. Most were small; the
+ones worth keeping:
+
+- **A failure marker from 1.2.x would have reported a successful update as a failed one.**
+  1.2.x only removed its marker when someone pressed Dismiss, so one can still be on disk.
+  After a manual update, the new build read it as its own failure. A failure marker now
+  counts only if it is newer than the running binary: a failed update relaunches the old
+  binary, which is older than the marker; a later build is newer than any marker from
+  before it.
+- **The success marker raced the app it was meant for** — found while reading the fix for
+  the point above, not by the review. `update.sh` wrote it after `make install`, but
+  `install.sh` ends by opening the new app, which reads its markers as it starts. Now
+  written before, and withdrawn if the build fails.
+- **Markdown was the wrong tool.** Measured: it turned `\\fileserver\share\*.txt` into
+  `\fileserver\share*.txt`, decoded `&amp;`, struck through text between tildes, and made
+  live links out of URLs and addresses in text supplied by whatever remote a clone follows.
+  For a tool whose users paste Windows paths all day that is disqualifying. Only backtick
+  spans are formatted now.
+- **Tags were ordered by git's string sort.** A tag without the `v` sorts below every tag
+  with one, so `1.5.0` was offered as older than `v1.4.0`, and `v2` and `v2.0` appeared as
+  two releases. Ordered and de-duplicated by the parsed version now, and a lightweight tag —
+  whose `%(contents)` is its commit's message, trailers and all — reads as empty.
+- **A moved tag would have stopped every update check for good** — the critic's find. A
+  clone refuses a tag that changed on the remote, the fetch exits 1, and under `--quiet`
+  nothing says why. Fetched with `--force` from 1.3.0 on; for 1.2.x copies the only
+  protection is never moving a pushed tag, now a written rule with the rest of the release
+  steps.
+- **"Known issues:" would have read as a list of fixes.** Any short capitalised heading
+  after the first label is now a section of its own; singular labels map where they should.
+- **The draft annotation announced a fix for a bug that never shipped** — the odd line
+  breaks existed only in the unreleased report window — and spoke only to 1.2.1 when 1.2.0
+  runs the same old updater. Both corrected, and the CHANGELOG with them.
+- Documentation: a contrast range claimed for two colours that only one met, two wrong
+  cross-references, two wrong counts, a guard attributed to the wrong script. `Theme.ok` was
+  darkened in light mode, having read 4.28:1 on the window background of macOS 14 and 15.
+
+**The entry now follows the pointer.** Asked for once drag-to-type existed: the crosshair
+said *where* but not *what*. Built first as a separate prototype, outside the repository,
+so it could be tried while the review was reading the sources — and adjusted twice from
+trying it: a keyboard icon on the card was dropped, and a slight tilt was added on pickup,
+so it reads as something lifted rather than a tooltip.
+
+It is the row itself — same type, fill and pin stripe — in a window of its own at the level
+macOS draws drag images at, beside the pointer rather than under it, because the click
+lands on the pointer's tip and a card there would hide the field being aimed at. It
+ignores the mouse and is taken off screen before the drop's click is posted. A masked entry
+travels as dots. The shadow is drawn by SwiftUI, because a window shadow is computed once
+and would have stayed square under a card that tilts after appearing.
+
+## What the review of the change below found — 2026-09-23
+
+The change below — *Updates got a tab, and release notes a shape* — was reviewed from four sides by independent agents — a parser harness
+run against every real tag and seventy-odd edge cases, a SwiftUI and AppKit read, a
+regression pass against HEAD, and a documentation audit — and every finding was then put
+to three separate refuters, surviving only on a majority. One survived: a stale comment
+in the renderer. The parser held on all 76 cases, and the five real annotations it had to
+leave alone came through byte-for-byte identical to the old reflow.
+
+The more useful results came from a critic asked only what the review had *not* looked
+at. Every one of these was measured rather than argued:
+
+- **The accent colour was the wrong colour for the one thing the colours were for.** The
+  *New features* heading used `Color.accentColor`, which is whatever the user picked. In
+  light mode a yellow accent gives 1.56:1, green 2.43:1, orange 2.57:1 — and green is the
+  hue of the *Bug fixes* heading, so under a green accent the two became the same. It now
+  has a colour of its own, `Theme.newFeature`, at 5.3:1 to 7.0:1 on every background it
+  can sit on.
+- **Only the newest release was ever described.** Someone on 1.2.1 offered a fixes-only
+  1.3.1 would never have been told that 1.3.0 added drag-to-type — the very kind of thing
+  the split exists to announce. The updater now collects every version between the one
+  running and the newest, and shows each under its own number.
+- **The helper that performs an update is the old version's.** `git pull` replaces
+  `update.sh` with a new file — the inode changes — so the bash already running it reads
+  the old one to the end. The first release carrying the success marker therefore cannot
+  produce its own report: coming from 1.2.1, no window opens. The notes of the running
+  version are now in the Updates tab whenever no newer one is on offer, which covers that hop and answers
+  the earlier complaint that a closed report was gone for good.
+- **The CHANGELOG is not an annotation.** Its Unreleased section, pasted into a tag, lost
+  all three `###` headings to git's cleanup, parsed as one summary, and kept its `**`
+  literally. The two are now written separately, and inline Markdown is rendered rather
+  than printed, since stray backticks were already in the 1.2.0 tag.
+- **A signed tag would have put its signature inside the last bug fix.** `%(contents)`
+  returns the signature after the text, and the parser glued it onto the final bullet.
+  Reproduced with an SSH-signed tag in a scratch repository. Nothing here is signed, but a
+  fork that signs its tags would have shown a block of base64 as a fix; everything from a
+  `-----BEGIN` line onwards is now dropped.
+- **A failed update was reported on every launch after, not once.** The failure marker
+  was only removed by *Done*; closing the report with the window's close button left it in
+  place. It is now consumed at launch, like the success marker, and stays in memory for
+  that session.
+- **The renderer never cleared its folder**, so bare-root renders from an earlier version
+  of it sat next to the current ones, still showing the broken layout. The default output
+  folder now starts empty — guarded the same way `bundle.sh` guards the one path it
+  deletes.
+
+Two of the refuted findings were taken anyway, because reading the code settled them
+faster than the vote: CLAUDE.md still listed a configurable hotkey as unbuilt, and its
+layout omitted nine files — four sources and five scripts. Both corrected.
+
+## Updates got a tab, and release notes a shape — 2026-09-23
+
+**The tab.** Updates started as three rows at the bottom of General. By the time
+drag-to-type and masking had joined that tab, the settings window had been made taller
+three times — 560, 660, 720, 800 — each time only to keep the update section in view.
+Growing a window to hold one more thing is a sign that it is holding two subjects, so
+updates moved to a tab of their own and the window went back to 660. The version moved
+with them, since "which version am I on" and "is there a newer one" are the same
+question asked from two ends.
+
+The menu bar's *Update to …* item has to land on that tab, not on whichever tab was open
+last. The settings window builds its content once, so the selected tab lives in a small
+observed object, `SettingsNavigation`, that the menu item can set before showing it.
+
+**The shape.** People using the tool asked for release notes that tell new features apart
+from bug fixes. Annotations can now carry labelled sections — `New:`, `Changed:`,
+`Fixed:`, `Removed:` — which `ReleaseNotes` splits and `ReleaseNotesView` shows with a
+heading each, the same way in the Updates tab and after an update. An annotation without
+labels, which is every tag up to 1.2.1, still reads as one block of prose.
+
+**Labels, because headings do not survive.** The obvious format was Markdown headings.
+Measured before choosing: `git tag -F` with the default cleanup mode deletes every line
+that starts with `#`, so `### New` disappears between writing a tag and reading it back,
+while `New:` comes through intact. Nothing warns you — the tag is created, just without
+its headings.
+
+**Parse first, reflow second.** The reflow that fixed wrapped notes joins each line onto
+the paragraph above it, which would glue a label onto the summary if it ran first. So
+`Updater` now keeps annotations exactly as git returns them and `ReleaseNotes` does both,
+in that order. The reflow moved there with it.
+
+**Two things the renderer had been hiding.** Rendered as a bare root, `ReleaseNotesView`
+reported an ideal height of several thousand points and came out as a 4,820-pixel strip
+with the text somewhere in the middle; inside the `Form` and `ScrollView` it actually
+lives in, it lays out normally. The renderer now draws it in those containers, because
+the container is what decides the layout.
+
+The second was older and worse: `cacheDisplay` captures a window's content view but not
+the background the window draws behind it, so any window whose SwiftUI content paints no
+background of its own came out transparent. In dark mode that is white text on nothing —
+a blank image. `WhatsNewView` had rendered that way since it was added, and it went
+unseen because only its light render was being opened. The renderer now paints
+`windowBackgroundColor` behind every window, the panel excepted.
+
+**Not yet decided: what this means for version numbers.** If a release is described as
+new features apart from fixes, the version number can say the same thing: anything under
+`New:`, `Changed:` or `Removed:` is a minor bump, fixes alone a patch. By that rule the
+batch waiting to be released is 1.3.0, not 1.2.2. It matches what the numbers have mostly
+done already — 1.2.0 for the updater, 1.2.1 for the panel that could not be moved — but it
+has not been agreed.
+
 ## Drag to type, and the property it costs — 2026-09-23
 
 Proposed by a second user: drag an entry to where you want it, and on release the app
@@ -852,6 +1038,11 @@ like — the eye reads the orphans as a broken left edge rather than as wrapping
 Fixed at the source in `Updater` rather than in the view, so the block in the settings
 window that shows the notes *before* an update gets it too. That one is narrower and had
 the same fault, unnoticed because nobody had read it at length yet.
+
+*Correction, same day:* that last claim was assumed, not checked, and it is wrong. A render
+of 1.2.1's settings box measured it at about 650 points wide in caption type, where a
+72-character line takes roughly 385 — nothing re-wraps there. The fault only ever existed
+in the report window, which had not shipped.
 
 Considered and rejected: a macOS notification, which is the conventional answer. It needs
 a permission the app does not otherwise ask for — there is exactly one today, and that is
@@ -1241,8 +1432,8 @@ build here. The commit does.
 ## Raised, not yet decided
 
 - [~] **"Up to date" can be stale, and nothing says so.** The update check runs five
-      seconds after launch and, in the settings window, only when no check has run at
-      all — the guard is `status == .idle`. Open settings on an app that has been running
+      seconds after launch and, in the Updates tab, only when no check has run at all —
+      the guard is `status == .idle`. Open settings on an app that has been running
       for a week and it reports the answer from a week ago, with no hint of its age. The
       *Check now* button sits right beside it, so nobody is blocked, but they have to know
       to distrust the line above it first.
@@ -1279,8 +1470,9 @@ build here. The commit does.
 
 ## Deferred, deliberately — revisit later
 
-- **`clear all` has no confirmation and takes pinned items with it.** Agreed as
-  acceptable for now; worth reconsidering when settings exist.
+- ~~**`clear all` has no confirmation and takes pinned items with it.**~~ Resolved: it
+  became `clear`, which asks in the footer and leaves pinned entries alone — see
+  *Decisions taken 2026-09-08, after phase 3*.
 - **Whether the panel should float above other windows.** It does, because otherwise
   clicking the destination would cover it and "stay visible" would not hold. Accepted
   as the most logical behaviour for now, but flagged as not obviously right.

@@ -20,22 +20,6 @@ SRC="$ROOT/dist/$APP_NAME.app"
 DEST_DIR="$HOME/Applications"
 DEST="$DEST_DIR/$APP_NAME.app"
 
-
-# Deleting a bundle is the only destructive thing these scripts do. Rather than trust
-# that every variable expanded correctly, refuse anything that is not an absolute path
-# ending in Toothpaste.app. An empty or unexpected variable then fails loudly instead
-# of removing something else.
-remove_bundle() {
-	local target="${1:-}"
-	[ -n "$target" ] || { echo "refusing to remove an empty path"; exit 1; }
-	case "$target" in
-		/*/Toothpaste.app) ;;
-		*) echo "refusing to remove unexpected path: $target"; exit 1 ;;
-	esac
-	[ -e "$target" ] || return 0
-	rm -rf "$target"
-}
-
 [ -d "$SRC" ] || { echo "error: $SRC does not exist — run 'make app' first"; exit 1; }
 
 echo "quitting any running instance"

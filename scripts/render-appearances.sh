@@ -12,7 +12,22 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUT="${1:-$ROOT/dist/appearances}"
+DEFAULT_OUT="$ROOT/dist/appearances"
+OUT="${1:-$DEFAULT_OUT}"
+
+# Start the default folder empty. A render that the renderer no longer produces would
+# otherwise sit next to the current ones looking like a current defect — which happened
+# with the first release-notes renders. Only the default folder: one passed as an argument
+# might be somewhere else entirely, and this script deletes nothing it did not make.
+# Same rule as bundle.sh uses for the bundle it deletes: refuse anything but the exact
+# path expected, so an unset or mangled variable fails loudly instead of deleting
+# something else.
+if [ "$OUT" = "$DEFAULT_OUT" ]; then
+	case "$DEFAULT_OUT" in
+		/*/dist/appearances) rm -rf "$DEFAULT_OUT" ;;
+		*) echo "refusing to clear unexpected path: $DEFAULT_OUT"; exit 1 ;;
+	esac
+fi
 
 # HistoryStore saves on a timer and the renderer fills it with mock items, so both home
 # variables point at a scratch directory — CFFIXED_USER_HOME as well as HOME, because

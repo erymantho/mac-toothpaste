@@ -53,8 +53,12 @@ kill -0 "$PID" 2>/dev/null && fail "the app did not quit, so nothing was changed
 
 # Read before anything is replaced: the app that comes back can then say what it grew
 # out of, and a version number on its own does not tell you an update happened.
+#
+# `|| PREVIOUS=unknown` outside the substitution, not `|| echo unknown` inside it: when the
+# plist is missing, PlistBuddy prints its complaint on stdout, and the inner form captured
+# that complaint and "unknown" together as the version.
 PREVIOUS="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" \
-	"$APP/Contents/Info.plist" 2>/dev/null || echo unknown)"
+	"$APP/Contents/Info.plist" 2>/dev/null)" || PREVIOUS=unknown
 echo "replacing version $PREVIOUS"
 
 [ -d "$ROOT/.git" ] || fail "no git checkout at $ROOT"
@@ -67,14 +71,17 @@ cd "$ROOT" || fail "cannot enter $ROOT"
 echo "--- git pull ---"
 git pull --ff-only || fail "git pull failed — local changes, or no network. See update.log."
 
+# The success marker is written BEFORE `make install`, and withdrawn if it fails. After
+# would be too late: install.sh ends by opening the new app, and that app reads its markers
+# as it starts — so a marker written once make returned was racing the app it was meant
+# for. The app reads it once, reports what changed, and deletes it; without it a
+# successful update looks exactly like a restart.
+rm -f "$MARKER"
+printf '%s' "$PREVIOUS" >"$SUCCEEDED"
+
 echo "--- make install ---"
 # `make install` builds and signs in full before install.sh touches ~/Applications, so
 # a build failure here leaves the installed copy intact and this only has to relaunch it.
-make install || fail "the build failed. See update.log."
+make install || { rm -f "$SUCCEEDED"; fail "the build failed. See update.log."; }
 
-rm -f "$MARKER"
-# The app reads this once on the launch that install.sh just triggered, reports what
-# changed, and deletes it. Without it a successful update is indistinguishable from the
-# app having been restarted for any other reason.
-printf '%s' "$PREVIOUS" >"$SUCCEEDED"
 echo "=== update finished $(date '+%Y-%m-%d %H:%M:%S') ==="

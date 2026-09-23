@@ -14,6 +14,7 @@ struct WhatsNewView: View {
     var onDone: () -> Void
 
     private var failure: String? { updater.previousFailure }
+    private var hasNotes: Bool { !ReleaseNotesList.readable(updater.installedReleases ?? []).isEmpty }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -39,8 +40,8 @@ struct WhatsNewView: View {
             } else {
                 Text("Toothpaste \(AppVersion.short)")
                     .font(.title3.weight(.semibold))
-                Text(updater.justUpdatedFrom.map { "Updated from \($0)." }
-                     ?? "Up to date.")
+                Text(updater.updatedFromVersion.map { "Updated from \($0)." }
+                     ?? (updater.justUpdatedFrom != nil ? "Updated." : "Up to date."))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -65,7 +66,13 @@ struct WhatsNewView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(20)
-        } else if updater.releaseNotes.isEmpty {
+        } else if updater.installedReleases == nil {
+            // Still reading the tags. Saying "no notes" here and replacing it a moment later
+            // reads as a mistake being corrected.
+            ProgressView()
+                .controlSize(.small)
+                .padding(20)
+        } else if !hasNotes {
             // Either the checkout is gone or this version was never tagged. Worth saying
             // rather than showing an empty panel that looks like a failed load.
             Text("No release notes were recorded for this version.")
@@ -74,11 +81,7 @@ struct WhatsNewView: View {
                 .padding(20)
         } else {
             ScrollView {
-                Text(updater.releaseNotes)
-                    .font(.callout)
-                    .textSelection(.enabled)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                ReleaseNotesList(releases: updater.installedReleases ?? [], named: AppVersion.short)
             }
             .padding(20)
         }

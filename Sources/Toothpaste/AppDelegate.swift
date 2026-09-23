@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settings = Settings()
     private let accessibility = Accessibility()
     private let updater = Updater()
+    private let settingsNavigation = SettingsNavigation()
     private var onboardingWindow: SettingsWindowController?
     private var whatsNewWindow: SettingsWindowController?
     private var settingsWindow: SettingsWindowController?
@@ -210,7 +211,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Only on that launch: both markers are consumed, so an ordinary start says nothing.
     private func reportUpdateOutcome() {
         guard updater.justUpdatedFrom != nil || updater.previousFailure != nil else { return }
-        updater.loadReleaseNotes()
+        updater.loadInstalledReleases()
 
         whatsNewWindow = SettingsWindowController(
             title: "Toothpaste \(AppVersion.short)",
@@ -237,6 +238,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     store: self.store,
                     accessibility: self.accessibility,
                     updater: self.updater,
+                    navigation: self.settingsNavigation,
                     onHotkeyChange: { [weak self] combo in self?.changeHotkey(to: combo) ?? nil }
                 )
             )
@@ -533,7 +535,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // The one place someone who never opens settings will still see it.
         if let version = updater.availableVersion {
             let update = NSMenuItem(
-                title: "Update to \(version)…", action: #selector(openSettings), keyEquivalent: ""
+                title: "Update to \(version)…", action: #selector(openUpdates), keyEquivalent: ""
             )
             update.target = self
             menu.addItem(update)
@@ -573,6 +575,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func openOnboarding() { showOnboarding() }
 
     @objc private func openSettings() { settingsWindow?.show() }
+
+    /// The update entry in the menu has to land on the tab that can act on it. The plain
+    /// Settings item keeps whichever tab was open last, as settings windows do.
+    @objc private func openUpdates() {
+        settingsNavigation.tab = .updates
+        settingsWindow?.show()
+    }
 
     @objc private func toggleLaunchAtLogin() {
         LaunchAtLogin.set(!LaunchAtLogin.isEnabled)

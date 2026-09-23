@@ -39,8 +39,24 @@ enum Theme {
     static let warning = dynamic { isDark in
         isDark ? .systemOrange : NSColor(srgbRed: 0.72, green: 0.38, blue: 0.02, alpha: 1)
     }
+    ///
+    /// The light green was taken down once more when it became a heading: at 0.50 it read
+    /// 4.28:1 on the 0.925 window background that macOS 14 and 15 use, under the 4.5:1 that
+    /// text of that size needs. At 0.45 it is 5.1:1 there and 6.0:1 on white.
     static let ok = dynamic { isDark in
-        isDark ? .systemGreen : NSColor(srgbRed: 0.11, green: 0.50, blue: 0.18, alpha: 1)
+        isDark ? .systemGreen : NSColor(srgbRed: 0.09, green: 0.45, blue: 0.16, alpha: 1)
+    }
+
+    /// The heading for new features in release notes.
+    ///
+    /// Not the system accent colour, which is whatever the user picked. Measured in light
+    /// mode: a yellow accent reaches 1.56:1 against the background and a green one 2.43:1 —
+    /// and green is also the hue `ok` gives bug fixes, so under a green accent the one
+    /// distinction these headings exist for disappears. A blue of its own reads at roughly
+    /// 6:1 in both appearances whatever has been chosen.
+    static let newFeature = dynamic { isDark in
+        isDark ? NSColor(srgbRed: 0.45, green: 0.66, blue: 1.0, alpha: 1)
+               : NSColor(srgbRed: 0.12, green: 0.35, blue: 0.80, alpha: 1)
     }
 
     private static func grey(dark: CGFloat, light: CGFloat) -> Color {

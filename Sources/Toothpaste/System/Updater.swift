@@ -16,11 +16,23 @@ import Foundation
 @MainActor
 final class Updater: ObservableObject {
 
+    /// One version's release notes, as its tag carries them — kept exactly as git returns
+    /// the annotation. Splitting it into sections needs the original line breaks, and
+    /// reflowing first would glue a label onto the paragraph above it; `ReleaseNotes` does
+    /// both, in that order.
+    struct Release: Equatable {
+        let version: String
+        let annotation: String
+    }
+
     enum Status: Equatable {
         case idle
         case checking
         case upToDate
-        case available(version: String, notes: String)
+        /// `version` is the newest; `releases` is every version newer than the running one,
+        /// newest first. Not only the newest, because a skipped release is still one whose
+        /// features the user has not been told about.
+        case available(version: String, releases: [Release])
         /// The recorded checkout is gone. Carries the path that was recorded, because
         /// seeing it is usually enough to remember what happened to it.
         case noCheckout(recorded: String)
@@ -32,6 +44,11 @@ final class Updater: ObservableObject {
     /// Left behind by `scripts/update.sh` when an attempt failed. It has to survive a
     /// restart: by the time it is written this app is gone, so the next launch is the
     /// only place a failure can be reported.
+    ///
+    /// Consumed on that launch like the success marker. It used to stay until dismissed,
+    /// which meant closing the report with the window's close button instead of *Done*
+    /// brought it back on every launch after. The reason stays in memory for the session,
+    /// so the Updates tab can still show it.
     @Published private(set) var previousFailure: String?
 
     /// The version this launch replaced, when the launch was one `scripts/update.sh`
@@ -43,9 +60,20 @@ final class Updater: ObservableObject {
     /// thing someone wants after pressing an update button is to know it worked.
     @Published private(set) var justUpdatedFrom: String?
 
-    /// The annotation of the tag matching the running version. The same text that was
-    /// shown before the update, now as what was actually received.
-    @Published private(set) var releaseNotes = ""
+    /// `justUpdatedFrom` when it is an actual version number. The marker can hold anything
+    /// an older `update.sh` wrote — "unknown", or PlistBuddy's own error text when the
+    /// installed copy was not where it expected — and that must not end up in a sentence.
+    var updatedFromVersion: String? { justUpdatedFrom.flatMap { Self.isVersion($0) ? $0 : nil } }
+
+    /// What this copy is running, as release notes: the tag matching its own version, and
+    /// after an update every version the update stepped over as well, newest first. The same
+    /// text that was offered before the update, now as what was actually received — and
+    /// shown in the Updates tab whenever no newer version is on offer, so a report closed too
+    /// quickly is not gone.
+    ///
+    /// `nil` until the tags have been read, which is not the same as "none": the report after
+    /// an update used to open saying no notes were recorded and then fill in a moment later.
+    @Published private(set) var installedReleases: [Release]?
 
     /// Set by the app delegate. Returns a reason when an update must not happen yet —
     /// quitting mid-keystroke would leave half a password in someone's remote session,
@@ -64,24 +92,65 @@ final class Updater: ObservableObject {
     }
 
     init() {
-        previousFailure = try? String(contentsOf: Self.failureMarker, encoding: .utf8)
-        justUpdatedFrom = try? String(contentsOf: Self.successMarker, encoding: .utf8)
-        if justUpdatedFrom != nil {
+        // A failure is only this launch's to report if it happened after this build was
+        // made. A failed update relaunches the old binary, which is older than the marker;
+        // a marker from an earlier failure, followed by a successful update by hand, is
+        // older than the new binary. 1.2.x never removed its marker until someone pressed
+        // Dismiss, so one left over from then would otherwise open as a failure straight
+        // after an update that worked.
+        let built = Self.buildDate
+        if Self.date(of: Self.failureMarker) ?? .distantPast > built {
+            previousFailure = try? String(contentsOf: Self.failureMarker, encoding: .utf8)
+        }
+        try? FileManager.default.removeItem(at: Self.failureMarker)
+
+        // The success marker is the mirror image. `update.sh` writes it before the build, so
+        // the binary an update produces is always newer than its marker. A binary that is
+        // older is not that update's product — an old copy opened while the build was still
+        // running, or the same copy after an update that was cut off — and must leave the
+        // marker for the launch it belongs to. Read by the wrong one, it reported an update
+        // that had not happened, and the new version then started without a word.
+        if let written = Self.date(of: Self.successMarker), written < built {
+            justUpdatedFrom = try? String(contentsOf: Self.successMarker, encoding: .utf8)
             try? FileManager.default.removeItem(at: Self.successMarker)
         }
     }
 
+    /// When this binary was built: `bundle.sh` copies it with `cp` and signs it, and
+    /// `install.sh` installs it with `ditto`, which keeps the date.
+    private static var buildDate: Date {
+        Bundle.main.executableURL.flatMap { date(of: $0) } ?? .distantPast
+    }
+
+    private static func date(of url: URL) -> Date? {
+        (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+    }
+
     /// Read from the checkout rather than carried through the update, so the notes are
-    /// whatever the tag actually says now. Silent when there is no checkout or no tag for
-    /// this version: the report is still worth showing without them.
-    func loadReleaseNotes() {
-        guard let checkout = Self.checkout else { return }
-        let tag = "v\(AppVersion.short)"
+    /// whatever the tags actually say now. Local only — `git tag` reads what the last fetch
+    /// brought in, so this costs no network access. Silent when there is no checkout or no
+    /// tag for this version: the report is still worth showing without them.
+    func loadInstalledReleases() {
+        guard installedReleases == nil else { return }
+        guard let checkout = Self.checkout else {
+            installedReleases = []
+            return
+        }
+        let current = AppVersion.short
+        // `update.sh` writes "unknown" when it could not read the old version, and treating
+        // that as 0 would pull in every tag ever made. An update that did not raise the
+        // version at all — a newer commit on the same number — would otherwise select an
+        // empty range and report that there are no notes, so it counts as no range either.
+        let since = updatedFromVersion.flatMap { Self.isNewer(current, than: $0) ? $0 : nil }
         Task.detached(priority: .utility) {
-            let result = Self.git(["tag", "--list", "--format=%(contents)", tag],
-                                  in: checkout, timeout: 10)
-            let notes = result.ok ? Self.reflowed(result.output) : ""
-            await MainActor.run { self.releaseNotes = notes }
+            let tags = Self.versionTags(in: checkout) ?? []
+            let releases = Self.releases(from: tags, in: checkout) { version in
+                guard !Self.isNewer(version, than: current) else { return false }
+                // By value, like every other comparison here: a `v1.3` tag is the 1.3.0 build.
+                guard let since else { return Self.isSame(version, current) }
+                return Self.isNewer(version, than: since)
+            }
+            await MainActor.run { self.installedReleases = releases }
         }
     }
 
@@ -106,57 +175,88 @@ final class Updater: ObservableObject {
         // Only refs move here: remote-tracking branches and tags. The working tree and
         // the current branch are untouched, which is what makes this safe to run on a
         // timer over somebody's repository.
-        let fetched = git(["fetch", "--tags", "--quiet", "origin"], in: checkout, timeout: 25)
+        //
+        // `--force` because a tag that was moved or re-created on the remote is otherwise
+        // refused ("would clobber existing tag") and the whole fetch exits 1 — silently, under
+        // `--quiet` — on every check from then on, for every clone that had the old one. No
+        // update would ever be offered again. A clone mirrors the remote's tags; it has no
+        // business keeping its own version of one.
+        let fetched = git(["fetch", "--tags", "--force", "--quiet", "origin"], in: checkout, timeout: 25)
         guard fetched.ok else {
-            return .failed(fetched.error.isEmpty ? "could not reach the repository" : fetched.error)
+            return .failed(fetched.error.isEmpty ? "git fetch failed" : fetched.error)
         }
 
-        let listed = git(["tag", "--list", "--sort=-v:refname"], in: checkout, timeout: 10)
-        guard listed.ok,
-              let newest = listed.output.split(separator: "\n").first.map(String.init)
-        else { return .failed("the repository has no version tags") }
+        guard let tags = versionTags(in: checkout), !tags.isEmpty else {
+            return .failed("the repository has no version tags")
+        }
 
-        let version = newest.hasPrefix("v") ? String(newest.dropFirst()) : newest
-        guard isNewer(version, than: current) else { return .upToDate }
-
-        // `%(contents)` is the tag's annotation, which is where this project's release
-        // notes actually live — see the messages on v1.1.0 and v1.1.1.
-        let notes = git(["tag", "--list", "--format=%(contents)", newest], in: checkout, timeout: 10)
-        return .available(version: version, notes: reflowed(notes.output))
+        let newer = releases(from: tags, in: checkout) { isNewer($0, than: current) }
+        guard let newest = newer.first else { return .upToDate }
+        return .available(version: newest.version, releases: newer)
     }
 
-    /// Joins the lines within a paragraph so the view can wrap the text to whatever width
-    /// it has.
+    /// Every version tag in the checkout, newest first, one per version.
     ///
-    /// Tag annotations are hard-wrapped for a terminal, and re-wrapping an already-wrapped
-    /// paragraph to a narrower width leaves a trail of orphans — every line that no longer
-    /// fits sheds two or three words onto a line of its own. It reads as broken alignment
-    /// rather than as wrapping, which is how it was reported.
-    ///
-    /// Blank lines keep separating paragraphs, and a line that is indented or starts a
-    /// bullet is left where it is: there the break was meant.
-    private nonisolated static func reflowed(_ text: String) -> String {
-        text.components(separatedBy: "\n\n")
-            .map { paragraph in
-                var lines: [String] = []
-                for raw in paragraph.components(separatedBy: "\n") {
-                    let trimmed = raw.trimmingCharacters(in: .whitespaces)
-                    guard !trimmed.isEmpty else { continue }
-
-                    let deliberate = raw.hasPrefix(" ") || raw.hasPrefix("\t")
-                        || trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ")
-                        || trimmed.hasPrefix("\u{2022} ")
-
-                    if deliberate || lines.isEmpty {
-                        lines.append(deliberate ? raw : trimmed)
-                    } else {
-                        lines[lines.count - 1] += " " + trimmed
-                    }
-                }
-                return lines.joined(separator: "\n")
+    /// Sorted here by the parsed number rather than trusted to `--sort=-v:refname`, which
+    /// compares the raw names: a tag written without the `v` sorts below every tag with one,
+    /// so `1.5.0` came out older than `v1.4.0` and the wrong version was offered as newest.
+    /// Two spellings of one version — `v2` and `v2.0` — keep only one: an annotated tag
+    /// before a lightweight one, since only an annotated tag carries notes, and then the `v`
+    /// spelling. Chosen by name alone, a lightweight `v1.3.0` hid an annotated `1.3.0`.
+    private nonisolated static func versionTags(in checkout: String) -> [(tag: String, version: String)]? {
+        // Tag names cannot contain spaces, so splitting at the first one is safe.
+        let listed = git(["tag", "--list", "--format=%(objecttype) %(refname:short)"],
+                         in: checkout, timeout: 10)
+        guard listed.ok else { return nil }
+        let candidates = listed.output
+            .split(separator: "\n")
+            .compactMap { line -> (tag: String, version: String, annotated: Bool)? in
+                let parts = line.split(separator: " ", maxSplits: 1)
+                guard parts.count == 2 else { return nil }
+                let tag = String(parts[1])
+                let version = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
+                return isVersion(version) ? (tag, version, parts[0] == "tag") : nil
             }
-            .filter { !$0.isEmpty }
-            .joined(separator: "\n\n")
+            .sorted { a, b in
+                a.annotated != b.annotated ? a.annotated : (a.tag.hasPrefix("v") && !b.tag.hasPrefix("v"))
+            }
+        var kept: [(tag: String, version: String)] = []
+        for candidate in candidates where !kept.contains(where: { isSame($0.version, candidate.version) }) {
+            kept.append((candidate.tag, candidate.version))
+        }
+        return kept.sorted { isNewer($0.version, than: $1.version) }
+    }
+
+    /// The annotations of the tags whose version passes `include`, newest first.
+    ///
+    /// `%(contents)` is the tag's annotation, which is where this project writes its release
+    /// notes — but for a lightweight tag it is the message of the commit the tag points at,
+    /// trailers included. The format asks for the contents only when the object is a tag,
+    /// so a lightweight tag reads as empty and is left out. One call per tag: there are a
+    /// handful, the reads are local, and a single call would need a delimiter that no
+    /// annotation could ever contain.
+    private nonisolated static func releases(
+        from tags: [(tag: String, version: String)], in checkout: String,
+        including include: (String) -> Bool
+    ) -> [Release] {
+        tags
+            .filter { include($0.version) }
+            .map { tag in
+                let format = "--format=%(if:equals=tag)%(objecttype)%(then)%(contents)%(end)"
+                let result = git(["tag", "--list", format, tag.tag], in: checkout, timeout: 10)
+                return Release(version: tag.version, annotation: result.ok ? result.output : "")
+            }
+    }
+
+    private nonisolated static func isSame(_ a: String, _ b: String) -> Bool {
+        !isNewer(a, than: b) && !isNewer(b, than: a)
+    }
+
+    /// Only plain dotted numbers count as versions. A stray tag that happens to exist in a
+    /// clone — a test tag, a fork's own naming — would otherwise compare as 0 and slip in.
+    private nonisolated static func isVersion(_ text: String) -> Bool {
+        let parts = text.split(separator: ".", omittingEmptySubsequences: false)
+        return !parts.isEmpty && parts.allSatisfy { !$0.isEmpty && $0.allSatisfy(\.isNumber) }
     }
 
     /// Compares `1.2.10` against `1.2.9` component by component. Comparing the strings

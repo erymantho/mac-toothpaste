@@ -11,8 +11,8 @@ This is a native rewrite, not a port — see *Divergences from 0xpaste* below.
 ## Status
 
 **Working and in daily use.** Capture, the panel, keystroke delivery into both local
-apps and RDP sessions, typing profiles, and a settings window are all built and
-verified. Roughly 2,600 lines of Swift, a 1.6 MB app.
+apps and RDP sessions, typing profiles, a settings window and in-app updating are all
+built and verified. Roughly 4,500 lines of Swift, a 2.4 MB app.
 
 **`PLAN.md` is the source of truth** for what was decided and why — it carries the
 measurements behind the typing engine, which are not guessable from the code. Keep it
@@ -20,8 +20,9 @@ current when behaviour changes, and update this file when the architecture does.
 a public development log, so write entries for a stranger: state what was measured and
 what it means, not who asked for what.
 
-Not built, by decision rather than omission: the 0xpaste visual styling (phase 2), a
-configurable hotkey, and the click-to-target overlay.
+Not built, by decision rather than omission: the 0xpaste visual styling (phase 2) and
+the click-to-target overlay. (The hotkey was once on this list; it has been configurable
+since phase 3 — see gotcha 7.)
 
 ## Version control
 
@@ -44,16 +45,69 @@ nothing to try out in those.
 Local commits are fine either way. The gate is the push, because other people now pull
 from this repo and a version they receive should be one that has actually been used.
 
-**Tag annotations are user-facing copy.** The updater shows the annotation of the tag it
-is offering as that version's release notes, in Settings → General. Write them for
-someone deciding whether to take the update, and do not open with the version number —
-the UI already states it one line above, and repeating it wastes the first line of a
-small box.
-Wrap them for git, not for the window. `Updater.reflowed` joins the lines within a
-paragraph before anything displays them, because re-wrapping already-wrapped text to a
-narrower box sheds two or three words onto a line of their own and reads as broken
-alignment. Blank lines still separate paragraphs, and an indented or bulleted line is
-left where it is.
+**Tag annotations are user-facing copy.** The app shows the annotation of a tag as that
+version's release notes — in Settings → Updates before an update, and in `WhatsNewView`
+after one. Write them for someone deciding whether to take the update, and do not open
+with the version number: the UI already states it one line above.
+**Split them into what is new and what was fixed**, because that is the distinction the
+people using the tool asked to see. `ReleaseNotes` reads labels on a line of their own,
+flush left:
+
+```
+One or two sentences for everyone, if there is something everyone must know.
+
+New:
+- Drag an entry to a field to click and type there. Off by default: with it on,
+  Toothpaste posts a mouse click as well as keystrokes.
+
+Fixed:
+- Clicking a row while another window was in front took two clicks.
+```
+
+`New:` and `Fixed:` are the two that matter; `Changed:` and `Removed:` exist for what is
+neither. Singular and common variants are accepted too (`Bug fix:`, `Feature:`,
+`Improvements:`), and any other short capitalised heading after the first label —
+`Known issues:` — becomes a section of its own under its own words rather than being
+folded into the one above. Numbered and `+` lists read as bullets. Text after the last
+section belongs to it, so anything addressed to everyone goes in the summary, first. **Never use Markdown headings.** `git tag -F` cleans the message by deleting every
+line that starts with `#`, so `### New` vanishes between writing the tag and reading it —
+measured on 2026-09-23. An annotation without labels still reads as one block of prose,
+which is what every tag up to 1.2.1 is.
+Wrap them for git, not for the window: `ReleaseNotes` joins wrapped lines before anything
+displays them, because re-wrapping already-wrapped text to a narrower box strands two or
+three words on a line of their own and reads as broken alignment.
+**The CHANGELOG entry and the tag annotation are two different texts.** Pasting the
+Unreleased section into a tag was measured: git deletes all its `###` headings, so it
+parses as one summary; and with labels put in place of the headings, each follow-up
+paragraph of an entry becomes a bullet of its own. Write the annotation separately — one
+paragraph per bullet — and before tagging, run it through `git tag -F` in a scratch repo
+and back through `ReleaseNotes`.
+**Plain text.** Only a span in backticks is formatted (as code). There is deliberately no
+Markdown: a parser was tried and it ate the backslashes out of `\\fileserver\share`,
+decoded entities, and made live links out of URLs in text that comes from whatever remote
+a clone follows.
+Signed tags are fine — everything from a `-----BEGIN` line on is dropped — and a
+lightweight tag reads as empty rather than showing its commit message. Tags are ordered by
+their parsed version, not by name, and where two name the same version the annotated one
+is kept.
+The app shows every version since the one someone is running, so a fixes-only release does
+not hide the features of the one before it — **but only from 1.3.0 on.** A 1.2.x copy shows
+the newest tag alone, as raw text. While anyone may still be on 1.2.x, a follow-up release's
+annotation should repeat what the previous one added.
+
+**Releasing, in this order — the updater depends on every step:**
+1. Bump `CFBundleShortVersionString` (and `CFBundleVersion`) in `Resources/Info.plist` in the
+   commit that will be tagged. The updater compares tags against that string: tag a commit
+   that still says the old version and every copy is offered the same update forever.
+2. Push `main` first. `update.sh` runs `git pull` on the branch, not on the tag, so a tag
+   whose commit is not on `main` yet installs the old code and offers itself again.
+3. Tag with `git tag -a -F`, the annotation written and round-tripped as above, then push the
+   tag.
+4. **Never move or re-create a tag once it is pushed.** Measured: every clone that already
+   has it then refuses the new one ("would clobber existing tag"), and `git fetch` exits 1
+   on every check from then on. 1.3.0 and later fetch tags with `--force` and survive it;
+   1.2.x copies do not, and would never be offered an update again. Get the annotation right
+   before pushing; a mistake is fixed in the next version's notes.
 
 ## Stack
 
@@ -125,12 +179,16 @@ Sources/Toothpaste/
     PanelController.swift      NSPanel host, show/hide, remembered position
     PanelView.swift            search, list, rows, profile menu, clear button
     ClickCatcher.swift         a row's click, caught in AppKit — see gotcha 16
+    DragPreview.swift          the entry carried beside the pointer — see gotcha 19
     WhatsNewView.swift         what an update did, on the launch it produced
+    ReleaseNotesView.swift     release notes, shown the same way before and after an update
     WindowDragBlocker.swift    where dragging the panel must not start
     WindowDragHandle.swift     where it must — see gotcha 15
     PanelState.swift           what the panel shows while open (armed item, status)
     SettingsWindowController.swift
-    SettingsView.swift         General / Typing profiles / Layout check
+    SettingsView.swift         General / Typing profiles / Layout check / Updates
+    HotkeyRecorder.swift       records a new hotkey inside the settings window
+    OnboardingView.swift       the Accessibility permission, explained
     Theme.swift                the greys and status colours, per appearance,
                                and which appearance the app renders in
   System/
@@ -138,11 +196,18 @@ Sources/Toothpaste/
     FrontmostWatcher.swift     tracks the app a paste would go to, live
     LaunchAtLogin.swift        SMAppService
     Settings.swift             UserDefaults-backed preferences
+    KeyCombo.swift             a hotkey as stored and shown
+    AppVersion.swift           version, commit and source path stamped by bundle.sh
     Updater.swift              version check, and handing the update to the helper
+    ReleaseNotes.swift         a tag annotation split into new / changed / fixed / removed
 Sources/TypeSpike/            diagnostic CLI: --dump-map, --list-layouts, typing tests
 Resources/Info.plist          bundle template (LSUIElement = 1)
 Resources/Toothpaste.icns     generated by scripts/make-icon.sh
 scripts/bundle.sh             assembles dist/Toothpaste.app
+scripts/select-sdk.sh         works around the CLT 6.4 SDK — see the section above
+scripts/create-cert.sh        the one-time signing certificate (make cert)
+scripts/make-icon.sh/.swift   generates Resources/Toothpaste.icns
+scripts/inspect-pasteboard.swift  dumps the types on the pasteboard, for debugging
 scripts/install.sh            copies it to ~/Applications and runs it from there
 scripts/verify-capture.sh     regression check for capture and persistence
 scripts/render-appearances.sh both palettes without switching the machine over
@@ -230,6 +295,17 @@ These are the non-obvious ones. Read before touching the relevant area.
     `Theme.swift` and every one of them states both values — add colours there, not
     inline. The same applies to `.orange` and `.green`: the system versions reach about
     2:1 against a light background, which is below readable.
+    And to `Color.accentColor` for text: it is whatever accent the user picked, so its
+    contrast is not ours to choose. Measured in light mode: yellow 1.56:1, green 2.43:1,
+    orange 2.57:1, graphite 2.88:1 — and a green accent is the same hue as `Theme.ok`, which
+    erased the difference between the *New features* and *Bug fixes* headings. Those use
+    `Theme.newFeature` (5.3:1 to 7.0:1 on every background it can sit on) and `Theme.ok`
+    (5.1:1 to 6.0:1 in light, 6.4:1 to 8.2:1 in dark — its light value was darkened once
+    more for this, having read 4.28:1 on the 0.925 window background of macOS 14 and 15).
+    The panel followed the same rule: the armed banner's words are primary with only its
+    icon, wash and border in the accent, and the *clear* confirmation uses `Theme.warning`
+    like a pinned row's delete. The accent is left on things that are not text — the pin
+    stripe, the armed border, the query caret.
     `Settings.appearance` can override the system choice; it is applied by setting
     `NSApp.appearance`, so every window follows at once and windows opened later inherit
     it. Apply it from the delegate's launch, never from `Settings.init` — that object is
@@ -250,6 +326,22 @@ These are the non-obvious ones. Read before touching the relevant area.
     controls unemphasised — an enabled `Toggle` renders grey rather than accented. Read
     the knob position, not the colour. SwiftUI colours set explicitly, `Color.accentColor`
     included, are unaffected.
+    **Look at the dark renders too, not only the light ones.** `cacheDisplay` captures the
+    content view and not the window's own background, so a window whose SwiftUI content
+    paints no background came out transparent — white text on nothing in dark mode, a
+    blank image. `WhatsNewView` rendered like that from the day it was added, and so did
+    the onboarding window, and nobody saw, because only their light renders were being
+    opened. `shoot` now paints
+    `windowBackgroundColor` behind every window, as the real window does; the panel is
+    exempt because it is meant to be transparent around its corners.
+    **It refuses to run against the real support folder.** Building an `Updater` deletes the
+    update markers it finds, and the renderer plants fake ones; run with the real folder it
+    would wipe a pending report and leave a fake failure for the app to show. The script
+    sets `CFFIXED_USER_HOME` — `HOME` alone does not redirect Foundation — and the renderer
+    checks it.
+    And render a view inside the container it lives in. `ReleaseNotesView` as a bare root
+    reported an ideal height of several thousand points; inside a `Form` or a `ScrollView`,
+    as in the app, it lays out normally.
 14. **An app cannot replace itself while it is running.** `install.sh` quits Toothpaste
     before it copies, so anything supervising an in-app update would be the thing being
     replaced. `Updater.update()` spawns `scripts/update.sh` detached, hands it this
@@ -269,10 +361,37 @@ These are the non-obvious ones. Read before touching the relevant area.
       or the current branch, which is what makes it safe to run unattended.
     - `git pull --ff-only`, so local commits or a dirty tree stop the update rather than
       being merged around.
+    - **Tags are fetched with `--force`.** Without it a tag moved on the remote makes every
+      later fetch exit 1, silently under `--quiet`, and nothing is ever offered again.
+    - **The helper that runs is always the old version's.** `Updater.update()` starts
+      the checkout's `update.sh` before pulling, and `git pull` replaces the file with a
+      new one rather than rewriting it — measured, the inode changes — so bash goes on
+      reading the old script to the end. Any change to `update.sh` therefore takes effect
+      one update later, and so does anything the *old* app shows before an update. This is
+      why the first release with the success marker could not produce its own report.
     - **The outcome is reported by marker file, on the launch the update produced.**
       `update.sh` writes `update-succeeded` with the version it replaced, or
-      `update-failed` with a reason; `Updater` reads and consumes them in `init`, and
-      `WhatsNewView` reports either. It has to work this way round because by the time
+      `update-failed` with a reason; `Updater` reads and consumes both in `init`, and
+      `WhatsNewView` reports either. The failure marker used to wait until dismissed, so
+      closing the report with the window's close button instead of *Done* brought it back
+      on every later launch.
+      - The **success** marker is written *before* `make install`, and withdrawn if it fails.
+        `install.sh` ends by opening the new app, which reads its markers as it starts, so a
+        marker written after `make install` returned was racing the app it was meant for.
+        Written before, it is always older than the binary that update produces — so it
+        counts only when it *is* older than the running binary. An old copy opened while the
+        build is running, or the same copy after an update that was cut off, is older than
+        the marker, leaves it alone, and the launch it belongs to still finds it. Read by the
+        wrong launch, it had reported an update that had not happened, and the real new
+        version then started without a word.
+      - A **failure** marker counts only if it is newer than the running binary. A failed
+        update relaunches the old binary, which is older; a marker left by an earlier failure
+        — 1.2.x never removed its own — is older than a build installed since, and would
+        otherwise report a successful manual update as a failed one.
+      - `justUpdatedFrom` is shown only when it is a version number. An older `update.sh`
+        could write PlistBuddy's own error text into it.
+      These are in 1.3.0's `update.sh` and `Updater`, so — see the point above — the script
+      fixes take effect from the first update *after* 1.3.0. It has to work this way round because by the time
       the outcome is known the app that asked for it no longer exists. An ordinary launch
       finds no marker and says nothing.
       Both outcomes need reporting, not just the failure. An update ends with the app
@@ -341,6 +460,20 @@ These are the non-obvious ones. Read before touching the relevant area.
     it, and bought a visible pause before every paste. Reported as "it types, but in the
     wrong field, so I have to select it beforehand" — which is what makes a username and
     a password cost two extra clicks.
+19. **The dragged entry is a window of its own, and three things about it are not
+    decoration.** `DragPreview` draws the row — its real text, fill and pin stripe — tilted
+    three degrees beside the pointer while drag-to-type carries it.
+    - **Beside the pointer, not under it.** The click lands on the pointer's tip; a card over
+      the tip would hide the field being aimed at. The crosshair stays for that reason.
+    - **Invisible to the mouse, and gone before the click.** `ignoresMouseEvents`, at
+      `CGWindowLevelForKey(.draggingWindow)` — the level macOS draws its own drag images at —
+      and ordered out in `mouseUp` before `onDrop` posts anything.
+    - **A masked entry travels masked.** The card gets the text the row shows, dots
+      included; dragging a secret across the screen must not be what reveals it.
+    The shadow is SwiftUI's, not the window's: a window shadow is computed once when the
+    window appears and stays square under a card that has since tilted. And a row can leave
+    the list mid-drag, so `ClickCatcher` also ends the drag in `viewWillMove(toWindow: nil)`,
+    or the card would stay on screen and the cursor stuck as a crosshair.
 
 ## Divergences from 0xpaste
 
@@ -389,7 +522,7 @@ Be honest about this in the UI and the README:
   default so that "this app posts keystrokes and nothing else" stays true for anyone who
   has not chosen otherwise. It also adds a failure the arm-and-click flow does not have:
   release over something that is not a text field and that is what gets clicked.
-- **The app can fetch and run code.** Settings → General pulls and rebuilds from the
+- **The app can fetch and run code.** Settings → Updates pulls and rebuilds from the
   checkout it was built from, then restarts. That is `git pull` plus `make install` on the
   user's own clone — the same commands they would type — but it means a button inside the
   app builds and runs whatever is in the repository. Clone-and-build already had that

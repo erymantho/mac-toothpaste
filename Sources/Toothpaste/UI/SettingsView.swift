@@ -2,27 +2,49 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
+enum SettingsTab: Hashable {
+    case general, profiles, layoutCheck, updates
+}
+
+/// Which tab the settings window shows.
+///
+/// Held outside the view so that something other than the tab bar can choose it: the menu
+/// bar's "Update to …" item has to land on Updates, not on whichever tab happened to be
+/// open last. The settings window builds its content once, so this has to be an object it
+/// observes rather than a value handed to it on each opening.
+@MainActor
+final class SettingsNavigation: ObservableObject {
+    @Published var tab: SettingsTab = .general
+}
+
 struct SettingsView: View {
     @ObservedObject var settings: Settings
     @ObservedObject var profiles: ProfileStore
     @ObservedObject var store: HistoryStore
     @ObservedObject var accessibility: Accessibility
     @ObservedObject var updater: Updater
+    @ObservedObject var navigation: SettingsNavigation
     var onHotkeyChange: (KeyCombo) -> String?
 
     var body: some View {
-        TabView {
+        TabView(selection: $navigation.tab) {
             GeneralTab(
                 settings: settings, store: store, accessibility: accessibility,
-                updater: updater, onHotkeyChange: onHotkeyChange
+                onHotkeyChange: onHotkeyChange
             )
                 .tabItem { Text("General") }
+                .tag(SettingsTab.general)
             ProfilesTab(profiles: profiles)
                 .tabItem { Text("Typing profiles") }
+                .tag(SettingsTab.profiles)
             LayoutCheckTab(profiles: profiles)
                 .tabItem { Text("Layout check") }
+                .tag(SettingsTab.layoutCheck)
+            UpdatesTab(settings: settings, updater: updater)
+                .tabItem { Text("Updates") }
+                .tag(SettingsTab.updates)
         }
-        .frame(minWidth: 700, idealWidth: 760, minHeight: 520, idealHeight: 800)
+        .frame(minWidth: 700, idealWidth: 760, minHeight: 520, idealHeight: 660)
     }
 }
 
@@ -32,10 +54,8 @@ private struct GeneralTab: View {
     @ObservedObject var settings: Settings
     @ObservedObject var store: HistoryStore
     @ObservedObject var accessibility: Accessibility
-    @ObservedObject var updater: Updater
     var onHotkeyChange: (KeyCombo) -> String?
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
-    @State private var confirmingUpdate = false
 
     var body: some View {
         Form {
@@ -91,40 +111,85 @@ private struct GeneralTab: View {
             }
             Text("Without it, typing silently does nothing at all.")
                 .font(.caption).foregroundStyle(.secondary)
-
-            LabeledContent("Version") {
-                Text(AppVersion.display)
-                    .font(.system(.caption, design: .monospaced))
-                    .textSelection(.enabled)
             }
-            }
+        }
+        .formStyle(.grouped)
+        .padding()
+    }
+}
 
+// MARK: - Updates
+
+/// A tab of its own since 2026-09-23. Updates began as three rows at the bottom of General,
+/// and by the time dragging and masking had joined that tab the window had been made taller
+/// three times to keep them in view — the sign of a tab holding two subjects.
+///
+/// The version lives here as well: "which version am I on" and "is there a newer one" are
+/// the same question, asked from two ends.
+private struct UpdatesTab: View {
+    @ObservedObject var settings: Settings
+    @ObservedObject var updater: Updater
+    @State private var confirmingUpdate = false
+
+    var body: some View {
+        Form {
             Section {
-            updateRow
+                LabeledContent("Version") {
+                    Text(AppVersion.display)
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                }
+                statusRow
+            }
 
-            if let failure = updater.previousFailure {
-                VStack(alignment: .leading, spacing: 6) {
-                    Label("The last update did not finish", systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(Theme.warning)
-                    Text(failure)
-                        .font(.caption)
-                        .fixedSize(horizontal: false, vertical: true)
-                    HStack {
-                        Button("Show log") { updater.revealLog() }
-                        Button("Dismiss") { updater.dismissFailure() }
+            // What you are about to install, before you install it — split into what is
+            // new and what was fixed, because that is the difference people decide on.
+            // With nothing on offer, what you are running instead: the report after an
+            // update can be closed in a second, and this is where it can be read again.
+            //
+            // With an update on offer, only its notes: the running version's under "1.3.0 is
+            // available" would read as the new version's. If the offered tags say nothing,
+            // nothing is shown rather than the wrong thing.
+            if updater.updateAvailable {
+                if let offered {
+                    Section(offered.title) {
+                        ReleaseNotesList(releases: offered.releases, named: offered.named)
                     }
-                    .controlSize(.small)
+                }
+            } else if let installed {
+                Section(installed.title) {
+                    ReleaseNotesList(releases: installed.releases, named: installed.named)
                 }
             }
 
-            Toggle("Check for updates at launch", isOn: $settings.checkForUpdates)
-            Text("The only thing Toothpaste does over the network, and it asks your own clone's remote for its version tags — nothing about you or your clipboard is sent. Updating then runs git pull and make install on your checkout, which means it builds and runs whatever is in the repository.")
-                .font(.caption).foregroundStyle(.secondary)
+            if let failure = updater.previousFailure {
+                Section {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Label("The last update did not finish", systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(Theme.warning)
+                        Text(failure)
+                            .font(.caption)
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack {
+                            Button("Show log") { updater.revealLog() }
+                            Button("Dismiss") { updater.dismissFailure() }
+                        }
+                        .controlSize(.small)
+                    }
+                }
+            }
+
+            Section {
+                Toggle("Check for updates at launch", isOn: $settings.checkForUpdates)
+                Text("The only thing Toothpaste does over the network, and it asks your own clone's remote for its version tags — nothing about you or your clipboard is sent. Updating then runs git pull and make install on your checkout, which means it builds and runs whatever is in the repository.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
         .padding()
         .onAppear {
+            // Local, so ungated: it reads tags the last fetch already brought in.
+            updater.loadInstalledReleases()
             // Gated on the preference: someone who switched the check off did not switch
             // it off only for launch.
             if settings.checkForUpdates, updater.status == .idle { updater.check() }
@@ -141,12 +206,39 @@ private struct GeneralTab: View {
         }
     }
 
+    /// Every version on offer that has anything to say, newest first.
+    ///
+    /// Titles are worked out from the releases that will actually be shown, not from all of
+    /// them: a lone readable release is titled with its own version, so its notes can never
+    /// sit under another version's number.
+    private var offered: (title: String, named: String?, releases: [Updater.Release])? {
+        guard case let .available(_, releases) = updater.status else { return nil }
+        let readable = ReleaseNotesList.readable(releases)
+        guard let first = readable.first else { return nil }
+        return readable.count == 1
+            ? ("What's new in \(first.version)", first.version, releases)
+            : ("What's new since \(AppVersion.short)", nil, releases)
+    }
+
+    /// What this copy is running — after an update, everything since the version it came
+    /// from. Shown when nothing newer is on offer.
+    private var installed: (title: String, named: String?, releases: [Updater.Release])? {
+        let releases = updater.installedReleases ?? []
+        let readable = ReleaseNotesList.readable(releases)
+        guard let first = readable.first else { return nil }
+        if readable.count == 1 {
+            return ("What's in \(first.version)", first.version, releases)
+        }
+        let since = updater.updatedFromVersion.map { "What's new since \($0)" } ?? "What's new"
+        return (since, nil, releases)
+    }
+
     /// Everything the update state can be, including the two that are not really about
     /// updates: a checkout that has moved, and a check that could not reach anything.
     /// Both are common enough that folding them into "failed" would cost someone an
     /// afternoon.
     @ViewBuilder
-    private var updateRow: some View {
+    private var statusRow: some View {
         switch updater.status {
         case .idle, .upToDate:
             LabeledContent("Updates") {
@@ -165,24 +257,11 @@ private struct GeneralTab: View {
                 }
             }
 
-        case let .available(version, notes):
-            VStack(alignment: .leading, spacing: 8) {
-                LabeledContent("Updates") {
-                    HStack {
-                        Text("\(version) is available")
-                        Button("Update and restart…") { confirmingUpdate = true }
-                    }
-                }
-                // What you are about to install, before you install it. This is the tag's
-                // own annotation, which is where this project writes its release notes.
-                if !notes.isEmpty {
-                    ScrollView {
-                        Text(notes)
-                            .font(.caption)
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .frame(maxHeight: 130)
+        case let .available(version, _):
+            LabeledContent("Updates") {
+                HStack {
+                    Text("\(version) is available")
+                    Button("Update and restart…") { confirmingUpdate = true }
                 }
             }
 

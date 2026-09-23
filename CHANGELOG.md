@@ -7,15 +7,30 @@ reasons in [the README](README.md#why-build-rather-than-download). To move to on
 git pull && make install
 ```
 
-Settings → General shows the running version *and the commit it was built from*. Quote
+Settings → Updates shows the running version *and the commit it was built from*. Quote
 that in a bug report: with clone-and-build everyone sits on whatever commit they last
 pulled, so a version number alone does not identify a build.
 
+Each version lists what is new apart from what was fixed, which is the same split the app
+shows before and after an update. *Changed* is for what behaves differently without being
+new, and *Removed* for what is gone.
+
 ## Unreleased
 
-**New, and off by default: drag an entry to a field to click and type there.** Press an
-entry, drag to where you want it, let go — Toothpaste clicks that spot and types. It works
-in remote sessions, because the click is synthesised the same way the keystrokes are.
+**Coming from 1.2.0 or 1.2.1, this one update still goes through that version's own
+updater.** So the notes it shows beforehand are plain text, and no window opens afterwards
+to say it worked. Settings → Updates in the new version shows what you got. From the next
+update on, both work.
+
+### New
+
+**Drag an entry to a field to click and type there — off by default.** Press an entry,
+drag to where you want it, let go: Toothpaste clicks that spot and types. It works in
+remote sessions, because the click is synthesised the same way the keystrokes are.
+
+While you drag, the entry itself travels beside the pointer — the row as it looks in the
+panel, tilted slightly as if picked up — so you can see what is about to be typed. A masked
+entry travels as dots.
 
 It is off until you switch it on in Settings → General, and that default is deliberate.
 With it off the app posts keystrokes and nothing else; with it on it also clicks, which
@@ -24,67 +39,96 @@ failure the existing flow does not have: let go over something that is not a tex
 and that is what gets clicked. Releasing back over the panel cancels, and the pointer
 becomes a crosshair while you are dragging so you can see what is about to happen.
 
-**An update now tells you it worked.** Toothpaste used to finish an update by quietly
+**An update tells you it worked.** Toothpaste used to finish an update by quietly
 reappearing, which looks exactly like a restart — so the one thing you wanted to know
 after pressing the button was the one thing it did not say. It now opens a window naming
-the version you came from and showing the release notes for the one you got, reflowed to
-the window rather than left at the width they were written for.
+the version you came from and showing the release notes for the one you got.
 
 A failed update gets the same window, which is the more important half: it used to leave
 a note in the settings window and nothing else, so an update could fail in silence.
 
-**Deleting a pinned entry now asks twice.** The delete button on a pinned row turns into
-a confirmation on the first click and clears itself after a few seconds, the way the
+**Release notes say what is new apart from what was fixed**, before an update in Settings
+→ Updates and after it in the window above. They also cover every version since yours
+rather than only the newest, so a feature is not lost because a fixes-only release came
+out after it. Older versions, written before there was a split, still read as one block
+of text. When no newer version is on offer, Settings → Updates shows the notes for the
+version you are running, so the report after an update can be read again after it has
+been closed.
+
+**You can switch off masking of entries marked secret.** Password managers tag what they
+copy as concealed, and those entries show as dots. Settings → General has a switch for
+it, on by default. It changes what is shown and nothing else — concealed entries are
+never written to disk either way.
+
+**An available update shows in the menu bar.** The icon gains a small arrow and the
+tooltip names the version. Previously it was only visible in settings and in the menu bar
+item's right-click menu, both of which need you to go and look, so a release could sit
+unnoticed.
+
+### Changed
+
+**Updates have a tab of their own in settings**, and the version moved there with them —
+"which version am I on" and "is there a newer one" are the same question. The *Update
+to …* item in the menu bar opens that tab directly.
+
+**Deleting a pinned entry asks twice.** The delete button on a pinned row turns into a
+confirmation on the first click and clears itself after a few seconds, the way the
 *clear* button already did. Unpinned entries still go on one click: they were going to
 vanish at the next restart anyway, while a pinned entry is the one thing in the history
 that is meant to survive. This exists because everything in the panel now acts on the
 click that brings it forward, which is what makes it usable while another window has
 focus — and which also means a mis-aimed click can reach a delete button.
 
-**Fixed, properly this time: clicking a row while another window was in front took two
-clicks.** The first attempt set the flag AppKit asks about, which turned out not to cover
-SwiftUI's own tap handling — dragging the panel started working on the first click while
-picking an entry still did not. Rows now take their click through the same path the drag
-handle uses.
+### Fixed
 
-**Fixed: clicking the panel while another window was in front took two clicks.** The
-first one only brought the panel forward and was otherwise thrown away. That is the
-normal way this tool is used — you pick an item, click into the window you want it typed
-into, and come back — so the wasted click landed on almost every round trip. One click
-now does what it was aimed at.
+**Clicking the panel while another window was in front took two clicks.** The first only
+brought the panel forward and was otherwise thrown away. That is the normal way this tool
+is used — you pick an entry, click into the window you want it typed into, and come
+back — so the wasted click landed on almost every round trip. One click now does what it
+was aimed at.
 
-**Fixed: text arrived in the field you had selected before, not the one you clicked.**
-The click that picks the destination is also the click that puts the caret in the field,
-and typing was starting before it had landed — on mouse-down, and over a remote session
-while the click was still on its way to the far side. It now waits for the click to
-finish. If it still happens on a slow link, raise *Initial delay* for that profile in
-Settings → Typing profiles; the caption there now says so.
+**Text arrived in the field you had selected before, not the one you clicked.** The click
+that picks the destination is also the click that puts the caret in the field, and typing
+was starting before it had landed — on mouse-down, and over a remote session while the
+click was still on its way to the far side. It now waits for the click to finish. If it
+still happens on a slow link, raise *Initial delay* for that profile in Settings → Typing
+profiles; the caption there says so.
 
 This is what made a username and a password cost two extra clicks: the field had to be
 selected in advance, every time.
 
-**New: you can switch off masking of entries marked secret.** Password managers tag what
-they copy as concealed, and those entries show as dots. Settings → General now has a
-switch for it, on by default. It changes what is shown and nothing else — concealed
-entries are never written to disk either way.
-
-**An available update now shows in the menu bar.** The icon gains a small arrow and the
-tooltip names the version. Previously it was only visible in settings and in the menu bar
-item's right-click menu, both of which need you to go and look, so a release could sit
-unnoticed.
+**Instructions in the panel could be unreadable under some accent colours.** The
+"now click the field you want this typed into" banner and the *clear* confirmation were
+written in the system accent colour, which is whatever you picked — a yellow accent put
+them at about 1.6:1 against a light background. The words are now in the normal text
+colour, with the accent kept for the icon and the outline.
 
 ## 1.2.1 — 2026-09-22
 
-**Fixed: the panel could not be moved on macOS 27.** Dragging it by its header stopped
-working, and no setting or restart brought it back. The cause is outside this app:
-macOS 27 no longer lets a SwiftUI-hosted window be dragged by its background, which is
-how the panel had always been moved. The header now starts the drag itself.
+### Fixed
+
+**The panel could not be moved on macOS 27.** Dragging it by its header stopped working,
+and no setting or restart brought it back. The cause is outside this app: macOS 27 no
+longer lets a SwiftUI-hosted window be dragged by its background, which is how the panel
+had always been moved. The header now starts the drag itself.
 
 Nothing else changes. The header is still the only place the panel can be dragged from,
 so brushing past a row cannot shift it, and the profile menu and settings button in the
 header still work as before.
 
 ## 1.2.0 — 2026-09-18
+
+**This release needs one manual update, and it is the last one.** Your current copy was
+built before it recorded where its source is, so it cannot update itself yet:
+
+```sh
+git pull && make install
+```
+
+After that the app takes over, and every tagged release from here shows up in settings by
+itself.
+
+### New
 
 **Toothpaste can update itself.** Settings → General checks your clone's remote for a
 newer version tag at launch, shows the release notes for it, and offers a button that
@@ -105,25 +149,33 @@ off. It asks your own clone's remote for its version tags — nothing about you 
 clipboard is sent. Before this the app made no network calls at all, which was worth
 giving up on purpose rather than quietly.
 
+### Changed
+
 The settings window is a little taller, so the new section fits without scrolling.
-
-**This release needs one manual update, and it is the last one.** Your current copy was
-built before it recorded where its source is, so it cannot update itself yet:
-
-```sh
-git pull && make install
-```
-
-After that the app takes over, and every tagged release from here shows up in Settings →
-General by itself.
 
 ## 1.1.1 — 2026-09-17
 
-**Fixed: the panel was unreadable on a light system theme.** It painted its own
-background with fixed near-black greys, while its text used the system's semantic
-colours, which follow the theme regardless. In Dark Mode the two happen to agree and it
-looks designed. In Light Mode the text turned near-black as well and the panel arrived
-as a black box. Every surface colour now states a value for both themes.
+### New
+
+**Settings → General → Appearance — Automatic, Light, Dark.** Automatic is the default
+and follows the system, so an existing install behaves exactly as before without being
+touched. The other two are worth having because the panel is a dark HUD by design: a
+light desktop does not necessarily mean you want a light panel, and a dark one does not
+mean you want a dark panel over a bright remote session. The choice applies to every
+window at once and takes effect while you watch.
+
+**`make appearances`.** Renders the panel, the settings window and the onboarding screen
+offscreen under all three choices and writes PNGs to `dist/appearances`. No window is
+ever put on screen and no focus is taken. It exists because the bug below was invisible
+without switching the whole machine over, which is why it was never checked.
+
+### Fixed
+
+**The panel was unreadable on a light system theme.** It painted its own background with
+fixed near-black greys, while its text used the system's semantic colours, which follow
+the theme regardless. In Dark Mode the two happen to agree and it looks designed. In
+Light Mode the text turned near-black as well and the panel arrived as a black box.
+Every surface colour now states a value for both themes.
 
 Warning and confirmation text was wrong in the same way, and measurably: the system's
 orange and green reach about 2:1 contrast against a light background, which is below
@@ -134,39 +186,29 @@ settings window and the onboarding screen.
 Found by a tester rather than here. Everyone who had run the app was running Dark Mode,
 and nothing about the code says which theme it was written against.
 
-**Added: Settings → General → Appearance — Automatic, Light, Dark.** Automatic is the
-default and follows the system, so an existing install behaves exactly as before without
-being touched. The other two are worth having because the panel is a dark HUD by design:
-a light desktop does not necessarily mean you want a light panel, and a dark one does
-not mean you want a dark panel over a bright remote session. The choice applies to every
-window at once and takes effect while you watch.
-
-**Added: `make appearances`.** Renders the panel, the settings window and the onboarding
-screen offscreen under all three choices and writes PNGs to `dist/appearances`. No
-window is ever put on screen and no focus is taken. It exists because the bug above was
-invisible without switching the whole machine over, which is why it was never checked.
-
-No behaviour, defaults or stored data changed.
-
 ## 1.1.0 — 2026-09-15
-
-**Removed the hover detail strip.** It showed the full text of a row that was too long
-to fit. It worked, and it was careful — it appeared only when the text would have been
-truncated anyway, and never for a masked entry, so it could not print a secret. It went
-because reading a long command before sending it turned out to be wanted rarely, while
-the strip was on screen most of the time, and a panel you glance at pays for anything
-permanently present. Nothing replaced it, and the underlying problem stands: rows are
-one line, so a 300-character command is not fully visible anywhere.
 
 This was the first release after other people started using the tool, which raises the
 bar for removals — they now cost someone their habits.
 
-**Fixed the build against Command Line Tools 6.4**, which broke it without any change
-here. CLT 6.4 ships a macOS 27 SDK whose SwiftUI declares `@State` and friends as
-macros, without shipping the plugin that implements them, so every SwiftUI file fails to
-compile. Full Xcode has the plugin; Command Line Tools does not.
-`scripts/select-sdk.sh` picks the newest SDK that predates the requirement, and returns
-nothing once the plugin appears, so the workaround removes itself.
+### Removed
+
+**The hover detail strip.** It showed the full text of a row that was too long to fit.
+It worked, and it was careful — it appeared only when the text would have been truncated
+anyway, and never for a masked entry, so it could not print a secret. It went because
+reading a long command before sending it turned out to be wanted rarely, while the strip
+was on screen most of the time, and a panel you glance at pays for anything permanently
+present. Nothing replaced it, and the underlying problem stands: rows are one line, so a
+300-character command is not fully visible anywhere.
+
+### Fixed
+
+**The build against Command Line Tools 6.4**, which broke without any change here. CLT
+6.4 ships a macOS 27 SDK whose SwiftUI declares `@State` and friends as macros, without
+shipping the plugin that implements them, so every SwiftUI file fails to compile. Full
+Xcode has the plugin; Command Line Tools does not. `scripts/select-sdk.sh` picks the
+newest SDK that predates the requirement, and returns nothing once the plugin appears, so
+the workaround removes itself.
 
 Worth knowing if it recurs: clone-and-build means a toolchain update can break every
 colleague at once, with no bad commit to point at.
@@ -174,6 +216,8 @@ colleague at once, with no bad commit to point at.
 ## 1.0.0 — 2026-09-09
 
 First release, and the point at which distribution was settled as clone-and-build.
+
+### New
 
 - Clipboard history in the menu bar, opened with ⌃⌥V or the menu bar icon.
 - **Types the entry as keystrokes instead of pasting it**, which is the whole point:

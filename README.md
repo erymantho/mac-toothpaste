@@ -5,7 +5,7 @@ instead of ⌘V, so it works where the normal paste path is blocked: RDP session
 VM consoles, browser-based terminals, and password fields.
 
 Inspired by [0xpaste](https://github.com/mypetcheetah/0xpaste) (Windows, Electron).
-Native Swift, no third-party dependencies, ~1.6 MB.
+Native Swift, no third-party dependencies, ~2.4 MB.
 
 <img src="docs/panel.png" width="360" alt="The Toothpaste panel: a pinned entry with an accent stripe, a password from a manager shown as dots, and recent clipboard entries.">
 
@@ -101,10 +101,17 @@ payload.
 
 ## Updating
 
-Settings → General checks for a new version at launch and offers to install it. Pressing
-the button quits Toothpaste, pulls and rebuilds from the checkout you installed from, and
-starts the new version — about a minute, no terminal. It shows the release notes first,
-so you see what you are getting before you take it.
+Toothpaste checks for a new version at launch; when there is one, the menu bar icon gains
+an arrow and Settings → Updates offers to install it. Pressing the button quits
+Toothpaste, pulls and rebuilds from the checkout you installed from, and starts the new
+version — about a minute, no terminal. It shows the release notes first, for every
+version since yours and split into what is new and what was fixed, so you see what you
+are getting before you take it. Afterwards a window says which version you came from and
+what you got, or why the update did not finish.
+
+(That is from 1.3.0 on. A copy on 1.2.x still shows only the newest version's notes, as
+plain text, and opens no window afterwards — the update that brings it to 1.3.0 is still
+run by its own older updater.)
 
 Two things it says in the confirmation, and they are both true: unpinned history is never
 written to disk, so it is gone after the restart, and the button **builds and runs
@@ -122,7 +129,7 @@ Your certificate does not change, so the Accessibility permission survives eithe
 Checking for updates is the only thing Toothpaste does over the network. It asks your own
 clone's remote for its version tags; nothing about you or your clipboard is sent.
 
-[CHANGELOG.md](CHANGELOG.md) says what each version changed. Settings → General shows
+[CHANGELOG.md](CHANGELOG.md) says what each version changed. Settings → Updates shows
 which one you are running, and the commit it was built from.
 
 ## Commands
