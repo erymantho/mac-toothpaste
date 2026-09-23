@@ -23,9 +23,19 @@ struct ClickCatcher: NSViewRepresentable {
     /// a mouse event rather than a key event — hence the switch, and hence off by default.
     var onDrop: ((NSPoint) -> Void)?
 
+    /// What the card beside the pointer shows while the entry is carried: the row's own
+    /// text, already masked if the row is. Only asked for once a drag has really started.
+    /// See `DragPreview`.
+    var dragCard: (() -> (text: String, pinned: Bool))?
+
+    /// Tells the row it is being carried, so it can fade the way a Finder item does.
+    var onDragChanged: ((Bool) -> Void)?
+
     final class CatcherView: NSView {
         var onClick: () -> Void = {}
         var onDrop: ((NSPoint) -> Void)?
+        var dragCard: (() -> (text: String, pinned: Bool))?
+        var onDragChanged: ((Bool) -> Void)?
 
         private var pressOrigin: NSPoint?
         private var dragging = false
@@ -47,20 +57,31 @@ struct ClickCatcher: NSViewRepresentable {
         /// these keep arriving even while the pointer is over another application. That
         /// is what makes dropping onto something else possible at all.
         override func mouseDragged(with event: NSEvent) {
-            guard onDrop != nil, !dragging, let origin = pressOrigin else { return }
+            if dragging {
+                DragPreview.shared.move(to: NSEvent.mouseLocation)
+                return
+            }
+            guard onDrop != nil, let origin = pressOrigin else { return }
             let dx = event.locationInWindow.x - origin.x
             let dy = event.locationInWindow.y - origin.y
             // A few points of slack, so a heavy-handed click is still a click.
             guard dx * dx + dy * dy > 16 else { return }
             dragging = true
+            // The crosshair stays: it is where the click will land, and the card beside it
+            // is only there to say what will be typed.
             NSCursor.crosshair.push()
+            if let card = dragCard?() {
+                DragPreview.shared.show(card.text, pinned: card.pinned, at: NSEvent.mouseLocation)
+            }
+            onDragChanged?(true)
         }
 
         override func mouseUp(with event: NSEvent) {
             defer { pressOrigin = nil; dragging = false }
 
             if dragging {
-                NSCursor.pop()
+                // Off screen before anything happens at the drop point.
+                endDrag()
                 // Released back over the panel: that is someone changing their mind, not
                 // a destination. Nothing is clicked and nothing is typed.
                 let location = NSEvent.mouseLocation
@@ -75,12 +96,32 @@ struct ClickCatcher: NSViewRepresentable {
             guard bounds.contains(point) else { return }
             onClick()
         }
+
+        /// A row can leave the list mid-drag — the entry removed, the history trimmed by a
+        /// new copy — and then no mouse-up ever reaches it. Without this the card would stay
+        /// on screen and the cursor stuck as a crosshair.
+        override func viewWillMove(toWindow newWindow: NSWindow?) {
+            if newWindow == nil, dragging {
+                endDrag()
+                dragging = false
+                pressOrigin = nil
+            }
+            super.viewWillMove(toWindow: newWindow)
+        }
+
+        private func endDrag() {
+            DragPreview.shared.hide()
+            NSCursor.pop()
+            onDragChanged?(false)
+        }
     }
 
     func makeNSView(context: Context) -> NSView {
         let view = CatcherView()
         view.onClick = onClick
         view.onDrop = onDrop
+        view.dragCard = dragCard
+        view.onDragChanged = onDragChanged
         return view
     }
 
@@ -90,5 +131,7 @@ struct ClickCatcher: NSViewRepresentable {
         guard let view = nsView as? CatcherView else { return }
         view.onClick = onClick
         view.onDrop = onDrop
+        view.dragCard = dragCard
+        view.onDragChanged = onDragChanged
     }
 }

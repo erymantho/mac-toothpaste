@@ -28,6 +28,8 @@ struct PanelView: View {
     /// one is on disk and does not come back, and that is the only case worth a second
     /// click.
     @State private var confirmingRemove: ClipItem.ID?
+    /// The row being dragged out of the panel, which fades while it is carried.
+    @State private var carried: ClipItem.ID?
 
     /// The search is a plain string this view maintains, not an `NSTextField`.
     ///
@@ -213,6 +215,7 @@ struct PanelView: View {
     private var armedBanner: some View {
         HStack(spacing: 6) {
             Image(systemName: "cursorarrow.click").font(.system(size: 11))
+                .foregroundStyle(Color.accentColor)
             VStack(alignment: .leading, spacing: 1) {
                 Text("now click the field you want this typed into")
                     .font(.system(size: 10, weight: .semibold, design: .monospaced))
@@ -222,7 +225,9 @@ struct PanelView: View {
             }
             Spacer()
         }
-        .foregroundStyle(Color.accentColor)
+        // The words are primary, not accent-coloured. The accent is whatever the user picked,
+        // and under a yellow one the one instruction that matters most in the whole flow read
+        // at 1.56:1. The icon, the wash and the panel's border still carry the accent.
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(Color.accentColor.opacity(0.15))
@@ -276,12 +281,13 @@ struct PanelView: View {
     private func row(_ item: ClipItem, isSelected: Bool, isArmed: Bool) -> some View {
         // Masking off means the dots go, and with them the eye button that undid them.
         let hidden = settings.maskConcealed && item.concealed && !revealed.contains(item.id)
+        let shown = hidden ? String(repeating: "•", count: min(item.characterCount, 20)) : item.preview
         return ZStack(alignment: .trailing) {
             // The whole row is the click target, and it is caught in AppKit rather than
             // by a tap gesture — see `ClickCatcher`. The buttons' width is reserved by a
             // hidden copy so the catcher can cover everything without swallowing them.
             HStack(spacing: 6) {
-                Text(hidden ? String(repeating: "•", count: min(item.characterCount, 20)) : item.preview)
+                Text(shown)
                     .font(.system(size: 12, design: .monospaced))
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -293,7 +299,10 @@ struct PanelView: View {
             .contentShape(Rectangle())
             .overlay(ClickCatcher(
                 onClick: { onArm(item) },
-                onDrop: settings.dragToType ? { onDrop(item, $0) } : nil
+                onDrop: settings.dragToType ? { onDrop(item, $0) } : nil,
+                // Exactly what the row shows, so a masked entry travels as dots.
+                dragCard: { (shown, item.pinned) },
+                onDragChanged: { carried = $0 ? item.id : nil }
             ))
 
             // Above the catcher in z-order, which is what keeps them clickable.
@@ -314,6 +323,8 @@ struct PanelView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .contentShape(Rectangle())
+        .opacity(carried == item.id ? 0.4 : 1)
+        .animation(.easeOut(duration: 0.12), value: carried)
     }
 
     private func rowButtons(_ item: ClipItem, hidden: Bool) -> some View {
@@ -380,7 +391,9 @@ struct PanelView: View {
                 }
             }
             .buttonStyle(.plain)
-            .foregroundStyle(confirmingClear ? Color.accentColor : Color.secondary)
+            // Same colour as a pinned row's delete confirmation: both are a destructive click
+            // waiting for a second one, and the accent could be any colour at all.
+            .foregroundStyle(confirmingClear ? Theme.warning : Color.secondary)
             .disabled(store.items.contains { !$0.pinned } == false)
         }
         .font(.system(size: 9, design: .monospaced))
