@@ -96,6 +96,9 @@ the newest tag alone, as raw text. While anyone may still be on 1.2.x, a follow-
 annotation should repeat what the previous one added.
 
 **Releasing, in this order — the updater depends on every step:**
+0. Pick the number from what the annotation says: anything under `New:`, `Changed:` or
+   `Removed:` raises the middle number, fixes alone the last. 1.3.0 was the first release
+   numbered this way.
 1. Bump `CFBundleShortVersionString` (and `CFBundleVersion`) in `Resources/Info.plist` in the
    commit that will be tagged. The updater compares tags against that string: tag a commit
    that still says the old version and every copy is offered the same update forever.

@@ -15,7 +15,7 @@ Each version lists what is new apart from what was fixed, which is the same spli
 shows before and after an update. *Changed* is for what behaves differently without being
 new, and *Removed* for what is gone.
 
-## Unreleased
+## 1.3.0 — 2026-09-23
 
 **Coming from 1.2.0 or 1.2.1, this one update still goes through that version's own
 updater.** So the notes it shows beforehand are plain text, and no window opens afterwards

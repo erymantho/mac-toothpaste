@@ -783,6 +783,22 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## 1.3.0 — 2026-09-23
+
+A minor release rather than a patch, by the rule adopted with it: anything under `New:`,
+`Changed:` or `Removed:` raises the middle number, fixes alone the last. It carries
+drag-to-type — off by default, now with the entry carried beside the pointer — a report
+after every update, updates in a tab of their own, release notes split into features and
+fixes across every version since the running one, the masking switch, the update arrow in
+the menu bar, a second click before deleting a pinned entry, and the two fixes that made
+the panel usable while another window has focus: the first click on a row, and typing that
+waits for the destination click to land. Detailed in the entries below, which also record
+three review rounds and what each of them found.
+
+The first release whose own updater writes a success marker. Coming from 1.2.x the update
+still runs through the old updater, so nobody gets the report window on the way to 1.3.0 —
+only on the way to whatever follows it.
+
 ## A third review, stopped part-way — 2026-09-23
 
 The fixes from the second review were put through a third round with the same shape. Its
@@ -962,12 +978,12 @@ a blank image. `WhatsNewView` had rendered that way since it was added, and it w
 unseen because only its light render was being opened. The renderer now paints
 `windowBackgroundColor` behind every window, the panel excepted.
 
-**Not yet decided: what this means for version numbers.** If a release is described as
-new features apart from fixes, the version number can say the same thing: anything under
-`New:`, `Changed:` or `Removed:` is a minor bump, fixes alone a patch. By that rule the
-batch waiting to be released is 1.3.0, not 1.2.2. It matches what the numbers have mostly
-done already — 1.2.0 for the updater, 1.2.1 for the panel that could not be moved — but it
-has not been agreed.
+**Decided with 1.3.0: the version number says the same thing.** If a release is described
+as new features apart from fixes, the number can carry that too: anything under `New:`,
+`Changed:` or `Removed:` is a minor bump, fixes alone a patch. That made the batch 1.3.0
+rather than 1.2.2, and it matches what the numbers had mostly done already — 1.2.0 for the
+updater, 1.2.1 for the panel that could not be moved. Written into the release steps in
+CLAUDE.md.
 
 ## Drag to type, and the property it costs — 2026-09-23
 
