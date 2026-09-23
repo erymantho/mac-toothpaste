@@ -88,6 +88,10 @@ decides which profile applies. Two ship by default:
 The panel header shows which profile is in force; the menu beside it overrides the
 automatic choice.
 
+In Windows App, leave *Keyboard Mode* on **Scancode**, its default. That is the mode that
+reads key codes, which is what Toothpaste types. Its Unicode mode typed nothing at all in
+testing on 11.4.1, not even from the Mac's own keyboard.
+
 **Layout check** in Settings is the one worth knowing about: pick a profile, paste any
 text, and see exactly which characters that layout cannot produce, *before* typing a
 password into a remote machine.

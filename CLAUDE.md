@@ -253,6 +253,19 @@ These are the non-obvious ones. Read before touching the relevant area.
    - **Modifiers must be posted as real Shift/Option key events.** Setting
      `CGEvent.flags` on the character event alone satisfies native Mac apps but not
      RDP clients: `Hello` arrives as `hello` and `@` as `2`.
+   - **And every modifier flag needs its left/right bit beside it.** A real keyboard sends
+     Shift as `maskShift` *plus* `0x02`, IOKit's `NX_DEVICELSHFTKEYMASK`, which says which
+     Shift is down; Option comes with `0x20`. Windows App 11.4 re-syncs the modifiers it has
+     sent against every key event and reads only that device bit, so a key carrying
+     `maskShift` alone makes it release our Shift right before the key: `#` arrives as `3`,
+     `A` as `a`. Read from the client itself — `MacKeyboardDriver.synchronizeModifiers`, with
+     `LeftShiftKeyMask = 0x2` — not guessed. `CGEvent` sets these bits on its own when it
+     creates a modifier event; assigning `flags` afterwards is what threw them away. See
+     PLAN.md, *Shift was released right before the key*.
+   - **Windows App's Unicode keyboard mode is not ours to fix.** On 11.4.1 it typed nothing
+     at all, from the Mac's own keyboard as well. Setting the event's unicode string to the
+     intended character made no difference there either — tried and reverted. Scancode is
+     its default, and the mode this tool is built for.
    - **Dead keys must be composed**, since `" ' ^ ~ é ü` have no direct key on
      U.S. International. Map them as dead-key-then-space (or then-letter).
    - **`UCKeyTranslate`'s `deadKeyState` packs two fields into one `UInt32`.** Only

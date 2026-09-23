@@ -161,6 +161,9 @@ exposed two further defects, both since fixed:
    character event is enough for native Mac apps, but RDP clients derive modifier
    state from actual Shift/Option key-down/key-up events. Fixed by pressing the
    modifier keys around each character, with a configurable `--mod-delay`.
+   (2026-09-23: not sufficient on its own any more. Windows App 11.4 also checks each
+   key event's flags for *which* Shift is down, and releases Shift if they do not say —
+   see *Shift was released right before the key*.)
 2. **The unicode fallback was actively harmful** — it silently produced `a`. In
    remote mode there is no fallback: an unproducible character is skipped and
    reported. A password typed wrongly in silence is worse than one typed short.
@@ -782,6 +785,56 @@ place". The hover detail strip had one.
   Worth noticing for the distribution model: "clone and build" means a toolchain update
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
+
+## Shift was released right before the key — 2026-09-23
+
+Reported from another Mac first: `^` and `#` arrived in an RDP session as `6` and `3`.
+Then reproduced on the development machine, in Windows App 11.4.1 — where this same code
+had typed `!@#$%^&*` correctly on 2026-09-08 (section 3).
+
+Three explanations were ruled out before the real one:
+
+- **An AZERTY remote**, where Shift+6 *is* `6`. Ruled out when a session set to US did
+  the same.
+- **The character the event carries.** A `CGEvent` holds a unicode string beside its key
+  code, fixed when the event is created from the source's keyboard state; flags set
+  afterwards do not change it. Measured without posting anything: 46 of 95 printable ASCII
+  characters carried the wrong one, every shifted character its unshifted twin, and `'`
+  and `"` nothing at all because they are dead keys on this Mac's layout. Setting the
+  string correctly changed nothing about what arrived, and was reverted.
+- **A modifier event of the wrong type.** An event created with `virtualKey: kVK_Shift`
+  is already `flagsChanged`, not `keyDown`.
+
+**The cause, read from Windows App itself.** `MacKeyboardDriver.keyDown(event:)` opens by
+calling `synchronizeModifiers` with the event's `modifierFlags`. That walks a table of
+modifier masks, and for each one presses or releases that modifier on the remote side so
+the remote matches the flags. The masks are the device-dependent bits:
+`LeftShiftKeyMask` is `0x2`, `RightShiftKeyMask` `0x4`, `LeftAlternateKeyMask` `0x20` —
+IOKit's `NX_DEVICE…` values, which say *which* key is down. The generic `maskShift`,
+`0x20000`, is not consulted at all.
+
+Toothpaste set `maskShift` and nothing else, on the Shift event and on the key. Windows
+App therefore saw Shift go down, then a key whose flags said no Shift key was down, and
+released Shift right before sending the key. Every shifted character arrived unshifted,
+capitals included.
+
+A real keyboard sets both bits, and so does `CGEvent`: a Shift event created from a
+`.hidSystemState` source reads `0x20020002`. Assigning `flags` afterwards replaced that
+with a bare `0x20000`. The fix sets the left-hand key's device bit beside every generic
+flag — on the modifier events and on the key between them. `TypeSpike` had the same code
+and got the same fix.
+
+Verified in Windows App 11.4.1: the test line `azqwm AZQWM`, the digits and
+`!@#$%^&*()` came through exactly, and typing into a Mac app was unchanged.
+
+Windows App's other keyboard mode, Unicode, typed nothing at all on the same machine,
+from the built-in and a USB keyboard alike. That is not something this side can fix, and
+Scancode is its default.
+
+Why it worked on 2026-09-08 is most likely that Windows App changed: the copy here was
+updated to 11.4.1 on 2026-09-17. The older version was not kept, so whether it lacked
+`synchronizeModifiers` cannot be checked. It is the explanation that fits, not a measured
+one.
 
 ## 1.3.0 — 2026-09-23
 

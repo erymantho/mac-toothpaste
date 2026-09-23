@@ -103,12 +103,22 @@ final class TypingEngine: ObservableObject {
 
     // MARK: - Posting
 
+    /// Which physical key is down, beside the generic flag that says a Shift or Option
+    /// is. A real keyboard always sets both; these are IOKit's `NX_DEVICELSHFTKEYMASK`
+    /// and `NX_DEVICELALTKEYMASK`, for the left-hand keys we press.
+    private static let leftShiftKey = CGEventFlags(rawValue: 0x02)
+    private static let leftOptionKey = CGEventFlags(rawValue: 0x20)
+
     private func press(
         _ keyCode: CGKeyCode, flags: CGEventFlags, source: CGEventSource?, profile: TargetProfile
     ) async {
         var modifiers: [(CGKeyCode, CGEventFlags)] = []
-        if flags.contains(.maskShift) { modifiers.append((CGKeyCode(kVK_Shift), .maskShift)) }
-        if flags.contains(.maskAlternate) { modifiers.append((CGKeyCode(kVK_Option), .maskAlternate)) }
+        if flags.contains(.maskShift) {
+            modifiers.append((CGKeyCode(kVK_Shift), [.maskShift, Self.leftShiftKey]))
+        }
+        if flags.contains(.maskAlternate) {
+            modifiers.append((CGKeyCode(kVK_Option), [.maskAlternate, Self.leftOptionKey]))
+        }
 
         // Awaited rather than slept: at 30ms per modifier a long password would
         // otherwise block the main thread for seconds.
@@ -118,7 +128,7 @@ final class TypingEngine: ObservableObject {
         // Real modifier key events, not just flags on the character event. Native Mac
         // apps accept flags alone; RDP clients do not, and `Hello` arrives as `hello`.
         for (code, flag) in modifiers {
-            held.insert(flag)
+            held.formUnion(flag)
             let event = CGEvent(keyboardEventSource: source, virtualKey: code, keyDown: true)
             event?.flags = held
             event?.post(tap: .cghidEventTap)
@@ -128,13 +138,18 @@ final class TypingEngine: ObservableObject {
         for isDown in [true, false] {
             guard let event = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: isDown)
             else { continue }
-            event.flags = flags
+            // The left/right bits in `held`, not only the generic ones in `flags`. Windows
+            // App 11.4 re-syncs the modifiers it has sent against every key event, and
+            // decides whether left Shift is down from the device bit alone — so without
+            // it, it releases the Shift we just pressed, right before the key. `#` then
+            // arrives as `3` and `A` as `a`.
+            event.flags = flags.union(held)
             event.post(tap: .cghidEventTap)
         }
 
         for (code, flag) in modifiers.reversed() {
             if modifierDelay > 0 { try? await Task.sleep(for: .milliseconds(modifierDelay)) }
-            held.remove(flag)
+            held.subtract(flag)
             let event = CGEvent(keyboardEventSource: source, virtualKey: code, keyDown: false)
             event?.flags = held
             event?.post(tap: .cghidEventTap)

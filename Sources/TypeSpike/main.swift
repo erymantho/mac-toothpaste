@@ -261,8 +261,15 @@ func buildKeyMap() -> [Character: KeyStroke] {
 
 func modifierKeys(for flags: CGEventFlags) -> [(CGKeyCode, CGEventFlags)] {
     var result: [(CGKeyCode, CGEventFlags)] = []
-    if flags.contains(.maskShift) { result.append((CGKeyCode(kVK_Shift), .maskShift)) }
-    if flags.contains(.maskAlternate) { result.append((CGKeyCode(kVK_Option), .maskAlternate)) }
+    // With the left-hand key's device bit beside the generic flag, as a real keyboard
+    // sends it (NX_DEVICELSHFTKEYMASK, NX_DEVICELALTKEYMASK). Windows App 11.4 reads the
+    // device bit alone — see TypingEngine.press.
+    if flags.contains(.maskShift) {
+        result.append((CGKeyCode(kVK_Shift), [.maskShift, CGEventFlags(rawValue: 0x02)]))
+    }
+    if flags.contains(.maskAlternate) {
+        result.append((CGKeyCode(kVK_Option), [.maskAlternate, CGEventFlags(rawValue: 0x20)]))
+    }
     return result
 }
 
@@ -277,7 +284,7 @@ func pressKey(_ keyCode: CGKeyCode, flags: CGEventFlags, source: CGEventSource?)
     var held: CGEventFlags = []
 
     for (modCode, modFlag) in modifiers {
-        held.insert(modFlag)
+        held.formUnion(modFlag)
         let event = CGEvent(keyboardEventSource: source, virtualKey: modCode, keyDown: true)
         event?.flags = held
         event?.post(tap: .cghidEventTap)
@@ -287,13 +294,13 @@ func pressKey(_ keyCode: CGKeyCode, flags: CGEventFlags, source: CGEventSource?)
     for isDown in [true, false] {
         guard let event = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: isDown)
         else { continue }
-        event.flags = flags
+        event.flags = flags.union(held)
         event.post(tap: .cghidEventTap)
     }
 
     for (modCode, modFlag) in modifiers.reversed() {
         if modDelayMs > 0 { usleep(modDelayMs * 1000) }
-        held.remove(modFlag)
+        held.subtract(modFlag)
         let event = CGEvent(keyboardEventSource: source, virtualKey: modCode, keyDown: false)
         event?.flags = held
         event?.post(tap: .cghidEventTap)
