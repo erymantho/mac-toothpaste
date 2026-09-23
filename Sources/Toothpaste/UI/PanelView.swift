@@ -7,6 +7,7 @@ struct PanelView: View {
     @ObservedObject var profiles: ProfileStore
     @ObservedObject var settings: Settings
     var onArm: (ClipItem) -> Void
+    var onDrop: (ClipItem, NSPoint) -> Void
     var onOpenSettings: () -> Void
     var onCopy: (ClipItem) -> Void
     var onDisarm: () -> Void
@@ -290,7 +291,10 @@ struct PanelView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
             .contentShape(Rectangle())
-            .overlay(ClickCatcher { onArm(item) })
+            .overlay(ClickCatcher(
+                onClick: { onArm(item) },
+                onDrop: settings.dragToType ? { onDrop(item, $0) } : nil
+            ))
 
             // Above the catcher in z-order, which is what keeps them clickable.
             rowButtons(item, hidden: hidden)

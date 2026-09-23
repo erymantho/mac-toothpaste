@@ -783,6 +783,42 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## Drag to type, and the property it costs — 2026-09-23
+
+Proposed by a second user: drag an entry to where you want it, and on release the app
+clicks there and types. Two quite different features hide in that sentence and they
+behave oppositely in the environment this tool exists for.
+
+**Real drag-and-drop is nearly free and nearly useless here.** Handing the text to macOS
+as a drag item is one modifier on a row. But the receiving application then inserts it
+through its own paste path — the exact path that is blocked or unreliable in RDP
+sessions, VM consoles and browser terminals. It would work beautifully in TextEdit and do
+nothing where it is needed.
+
+**The version that works everywhere synthesises a click**, because then both the click
+and the keystrokes are posted events, like the typing already is. That reverses a
+recorded decision: *Divergences from 0xpaste* has said since the beginning that this tool
+reaches the right field "without synthetic mouse clicks or an overlay", which was the
+whole argument for arming instead of copying 0xpaste's click-point capture.
+
+**What it actually buys is smoothness, not reach.** Click-then-click becomes
+press-drag-release — the same number of physical actions, merged into one gesture. For
+someone moving credentials all day that is worth something, and it is honest to say it is
+ergonomics rather than capability.
+
+**So it ships off by default**, which keeps "this app posts keystrokes and nothing else"
+true for anyone who has not chosen otherwise. That sentence matters beyond the code: the
+README already has to describe the tool as functionally an autotyper, and with this on it
+is an autoclicker too, which is a different conversation with whoever manages a machine.
+Making it a preference rather than a behaviour means the default is a property, and the
+people who want the gesture only have to give up the property for themselves.
+
+The new failure mode is stated rather than engineered around: release over something that
+is not a text field and that is what gets clicked. In a production remote session a
+misplaced click can do more than a misplaced string. Releasing back over the panel
+cancels, and the pointer becomes a crosshair while dragging so the gesture announces
+itself, but neither of those makes the aim any better.
+
 ## An update that finishes in silence — 2026-09-22
 
 Raised after the first real in-app update: the app came back, and nothing said whether

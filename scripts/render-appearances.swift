@@ -49,7 +49,7 @@ private final class Renderer: NSObject, NSApplicationDelegate {
                 self.settings.appearance = choice
                 self.shoot(self.panel, 360, 320, "panel", choice)
                 self.shoot(self.armedPanel, 360, 320, "panel-armed", choice)
-                self.shoot(self.preferences, 760, 720, "settings", choice)
+                self.shoot(self.preferences, 760, 800, "settings", choice)
                 self.shoot(self.onboarding, 460, 430, "onboarding", choice)
                 self.shoot(self.whatsNew(failed: false), 460, 400, "whatsnew", choice)
                 self.shoot(self.whatsNew(failed: true), 460, 400, "whatsnew-failed", choice)
@@ -76,7 +76,7 @@ private final class Renderer: NSObject, NSApplicationDelegate {
         state.armed = nil
         return AnyView(PanelView(
             store: store, state: state, profiles: profiles, settings: settings,
-            onArm: { _ in }, onOpenSettings: {}, onCopy: { _ in },
+            onArm: { _ in }, onDrop: { _, _ in }, onOpenSettings: {}, onCopy: { _ in },
             onDisarm: {}, onClose: {}
         ))
     }
@@ -87,7 +87,7 @@ private final class Renderer: NSObject, NSApplicationDelegate {
         state.armed = store.items.first
         return AnyView(PanelView(
             store: store, state: state, profiles: profiles, settings: settings,
-            onArm: { _ in }, onOpenSettings: {}, onCopy: { _ in },
+            onArm: { _ in }, onDrop: { _, _ in }, onOpenSettings: {}, onCopy: { _ in },
             onDisarm: {}, onClose: {}
         ))
     }

@@ -13,6 +13,17 @@ pulled, so a version number alone does not identify a build.
 
 ## Unreleased
 
+**New, and off by default: drag an entry to a field to click and type there.** Press an
+entry, drag to where you want it, let go — Toothpaste clicks that spot and types. It works
+in remote sessions, because the click is synthesised the same way the keystrokes are.
+
+It is off until you switch it on in Settings → General, and that default is deliberate.
+With it off the app posts keystrokes and nothing else; with it on it also clicks, which
+is a different thing to have to explain about a tool on a managed machine. It also adds a
+failure the existing flow does not have: let go over something that is not a text field
+and that is what gets clicked. Releasing back over the panel cancels, and the pointer
+becomes a crosshair while you are dragging so you can see what is about to happen.
+
 **An update now tells you it worked.** Toothpaste used to finish an update by quietly
 reappearing, which looks exactly like a restart — so the one thing you wanted to know
 after pressing the button was the one thing it did not say. It now opens a window naming

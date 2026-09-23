@@ -122,6 +122,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     profiles: self.profiles,
                     settings: self.settings,
                     onArm: { [weak self] item in self?.arm(item) },
+                    onDrop: { [weak self] item, point in self?.dropAndType(item, at: point) },
                     onOpenSettings: { [weak self] in self?.settingsWindow?.show() },
                     onCopy: { [weak self] item in self?.copyToPasteboard(item) },
                     onDisarm: { [weak self] in self?.disarm() },
@@ -309,7 +310,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Deliberately not hiding: the panel stays on screen so a second item can be
         // sent without reopening it. It loses key focus to the destination, which is
         // exactly what should happen.
+        deliver(item)
+    }
 
+    /// A drop is the same delivery, with the destination click made by us instead of by
+    /// the user. Only reachable when `Settings.dragToType` is on.
+    private func dropAndType(_ item: ClipItem, at location: NSPoint) {
+        guard accessibility.isTrusted else {
+            panelState.accessibilityGranted = false
+            showOnboarding()
+            return
+        }
+        panelState.armed = nil
+        panelController?.onOutsideClick = nil
+
+        Task { @MainActor in
+            await Self.postClick(at: location)
+            deliver(item)
+        }
+    }
+
+    /// Cocoa puts the origin at the bottom left of the screen carrying the menu bar;
+    /// Quartz puts it at the top left of that same screen. A display sitting above it
+    /// therefore has a legitimately negative Y, which is why this converts against that
+    /// one screen's height rather than against whichever display the point is on.
+    private static func postClick(at location: NSPoint) async {
+        guard let menuBarScreen = NSScreen.screens.first else { return }
+        let point = CGPoint(x: location.x, y: menuBarScreen.frame.height - location.y)
+        let source = CGEventSource(stateID: .combinedSessionState)
+
+        CGEvent(mouseEventSource: source, mouseType: .leftMouseDown,
+                mouseCursorPosition: point, mouseButton: .left)?.post(tap: .cghidEventTap)
+        // A click of zero length is ignored by some targets, and a remote session has to
+        // forward both halves of it before anything happens on the far side.
+        try? await Task.sleep(for: .milliseconds(30))
+        CGEvent(mouseEventSource: source, mouseType: .leftMouseUp,
+                mouseCursorPosition: point, mouseButton: .left)?.post(tap: .cghidEventTap)
+    }
+
+    private func deliver(_ item: ClipItem) {
         Task { @MainActor in
             guard let destination = await waitForDestination() else {
                 flagWarning("No window came forward, so nothing was typed.")

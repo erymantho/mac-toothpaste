@@ -22,7 +22,7 @@ struct SettingsView: View {
             LayoutCheckTab(profiles: profiles)
                 .tabItem { Text("Layout check") }
         }
-        .frame(minWidth: 700, idealWidth: 760, minHeight: 520, idealHeight: 720)
+        .frame(minWidth: 700, idealWidth: 760, minHeight: 520, idealHeight: 800)
     }
 }
 
@@ -52,6 +52,10 @@ private struct GeneralTab: View {
                 }
             }
             Text("Applies while the app is running. Nothing unpinned is written to disk in the first place — a restart already leaves only your pinned entries.")
+                .font(.caption).foregroundStyle(.secondary)
+
+            Toggle("Drag an entry to a field to click and type there", isOn: $settings.dragToType)
+            Text("Off, Toothpaste only ever posts keystrokes. On, dragging an entry out of the panel makes Toothpaste click wherever you release and type there — which works in remote sessions, and which means a release over something that is not a text field is a click on that thing instead.")
                 .font(.caption).foregroundStyle(.secondary)
 
             Toggle("Mask entries marked secret", isOn: $settings.maskConcealed)

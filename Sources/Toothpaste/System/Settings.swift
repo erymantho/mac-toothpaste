@@ -16,6 +16,19 @@ final class Settings: ObservableObject {
         didSet { UserDefaults.standard.set(retentionHours, forKey: Self.retentionKey) }
     }
 
+    /// Whether dragging an entry out of the panel clicks where it is dropped and types
+    /// there.
+    ///
+    /// Off by default, and that default is a property rather than a preference. Every
+    /// other thing this app posts is a key event; with this on it also posts a mouse
+    /// click, which makes it an autoclicker as well as an autotyper and changes what has
+    /// to be said about it on a managed machine. It also adds a failure the arm-and-click
+    /// flow does not have: release over something that is not a text field and that is
+    /// what gets clicked.
+    @Published var dragToType: Bool {
+        didSet { UserDefaults.standard.set(dragToType, forKey: Self.dragToTypeKey) }
+    }
+
     /// Whether entries a password manager marked secret are shown as dots.
     ///
     /// On by default, and the default is the point: a secret should not appear on screen
@@ -63,6 +76,7 @@ final class Settings: ObservableObject {
     private static let appearanceKey = "appearance"
     private static let checkForUpdatesKey = "checkForUpdates"
     private static let maskConcealedKey = "maskConcealed"
+    private static let dragToTypeKey = "dragToType"
     private static let maxHistoryKey = "maxHistory"
     private static let retentionKey = "retentionHours"
     static let historyChoices = [10, 25, 50, 75]
@@ -94,5 +108,6 @@ final class Settings: ObservableObject {
         // latter cannot tell "switched off" from "never set".
         checkForUpdates = UserDefaults.standard.object(forKey: Self.checkForUpdatesKey) as? Bool ?? true
         maskConcealed = UserDefaults.standard.object(forKey: Self.maskConcealedKey) as? Bool ?? true
+        dragToType = UserDefaults.standard.bool(forKey: Self.dragToTypeKey)
     }
 }

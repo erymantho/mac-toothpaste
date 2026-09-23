@@ -171,6 +171,11 @@ fields too, because Secure Input Mode does not block it. That is the point of th
 and it also means it is functionally an autotyper. If you are putting it on a managed or
 shared machine, that is worth raising with whoever looks after it.
 
+One setting changes that description. *Drag an entry to a field to click and type there*
+is off unless you switch it on, and with it on Toothpaste posts a mouse click of its own
+at the point you release before it types — so it is an autoclicker as well. Left off, it
+only ever posts keystrokes.
+
 It can also update itself, which means it can fetch code and run it. That is inherent to
 installing by building from source — you already trust the repository — but a button that
 does it without a terminal is worth knowing about for the same conversation.
