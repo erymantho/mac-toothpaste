@@ -15,6 +15,21 @@ Each version lists what is new apart from what was fixed, which is the same spli
 shows before and after an update. *Changed* is for what behaves differently without being
 new, and *Removed* for what is gone.
 
+## 1.3.1 — 2026-09-23
+
+### Fixed
+
+**Characters that need Shift arrived without it in Windows App.** `#` came out as `3`, `^`
+as `6`, `A` as `a` — anything shifted, passwords included. Windows App 11.4 checks on every
+key *which* Shift key the event says is down, left or right, and releases Shift on the
+remote side when it says none. A real keyboard always says; Toothpaste only said that a
+Shift was down. It now says which, the way a keyboard does. Typing into Mac apps is
+unchanged.
+
+Leave Windows App's *Keyboard Mode* on **Scancode**, its default. Its Unicode mode typed
+nothing at all in testing on 11.4.1, from the Mac's own keyboard as well, so nothing on
+this side can help in that mode.
+
 ## 1.3.0 — 2026-09-23
 
 **Coming from 1.2.0 or 1.2.1, this one update still goes through that version's own

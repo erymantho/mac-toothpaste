@@ -786,6 +786,12 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## 1.3.1 — 2026-09-23
+
+A patch: the one fix in the entry below. Its annotation repeats what 1.3.0 added, under a
+heading of its own, because a 1.2.x copy shows only the newest tag's notes and anyone
+still on 1.2.x goes straight from there to this.
+
 ## Shift was released right before the key — 2026-09-23
 
 Reported from another Mac first: `^` and `#` arrived in an RDP session as `6` and `3`.
