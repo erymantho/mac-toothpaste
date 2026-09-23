@@ -57,8 +57,8 @@ flush left:
 One or two sentences for everyone, if there is something everyone must know.
 
 New:
-- Drag an entry to a field to click and type there. Off by default: with it on,
-  Toothpaste posts a mouse click as well as keystrokes.
+- Drag an entry to a field to click and type there. Toothpaste posts a mouse
+  click as well as keystrokes for it.
 
 Fixed:
 - Clicking a row while another window was in front took two clicks.
@@ -499,10 +499,11 @@ These are the non-obvious ones. Read before touching the relevant area.
   field, including inside a remote session — without synthetic mouse clicks or an
   overlay. `FrontmostWatcher` names that destination in the header, tracked live
   because the panel stays open while you click around.
-  Since 2026-09-23 there is an opt-in that does synthesise a click: `Settings.dragToType`
+  Since 2026-09-23 there is a setting that does synthesise a click: `Settings.dragToType`
   makes dragging an entry out of the panel click where it is released and type there. It
-  is **off by default and must stay that way**, because it is the only thing in the app
-  that posts a mouse event rather than a key event — see the security posture.
+  shipped off by default in 1.3.0 and was **switched on by default** later the same day,
+  once it had been in use. It is still the only thing in the app that posts a mouse event
+  rather than a key event, so the README says so up front — see the security posture.
 - **Dead-key handling is required after all**, unlike the early assumption that
   macOS made it go away. See point 4: RDP targets force virtual keycodes, which
   brings the whole layout problem back.
@@ -534,10 +535,12 @@ Be honest about this in the UI and the README:
   autotyper. That is the point, but it deserves a clear-eyed mention.
 - **With `Settings.dragToType` on, it also clicks.** Dropping an entry makes the app post
   a mouse click at that point before typing, which makes it an autoclicker as well and
-  changes the sentence someone has to say to whoever manages their machine. It is off by
-  default so that "this app posts keystrokes and nothing else" stays true for anyone who
-  has not chosen otherwise. It also adds a failure the arm-and-click flow does not have:
-  release over something that is not a text field and that is what gets clicked.
+  changes the sentence someone has to say to whoever manages their machine. **It is on by
+  default**, so that sentence applies to everyone who has not switched it off — the README
+  states it in *What this is, plainly*, not in small print. Switched off, "this app posts
+  keystrokes and nothing else" is true again. It also adds a failure the arm-and-click
+  flow does not have: release over something that is not a text field and that is what
+  gets clicked.
 - **The app can fetch and run code.** Settings → Updates pulls and rebuilds from the
   checkout it was built from, then restarts. That is `git pull` plus `make install` on the
   user's own clone — the same commands they would type — but it means a button inside the

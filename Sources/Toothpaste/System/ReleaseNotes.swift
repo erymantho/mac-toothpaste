@@ -11,7 +11,7 @@ import Foundation
 ///     One or two sentences for everyone, if there is something everyone must know.
 ///
 ///     New:
-///     - Drag an entry to a field to click and type there. Off by default.
+///     - Drag an entry to a field to click and type there.
 ///
 ///     Fixed:
 ///     - Clicking a row while another window was in front took two clicks.

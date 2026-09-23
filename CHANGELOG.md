@@ -15,6 +15,19 @@ Each version lists what is new apart from what was fixed, which is the same spli
 shows before and after an update. *Changed* is for what behaves differently without being
 new, and *Removed* for what is gone.
 
+## Unreleased
+
+### Changed
+
+**Dragging an entry to a field now works without switching it on first.** Drag an entry
+out of the panel, let go over a field, and Toothpaste clicks there and types it. It is on
+by default; Settings → General still switches it off.
+
+If you never touched that switch, updating turns the feature on. If you switched it off
+yourself, it stays off. Worth knowing on a managed machine: with it on, Toothpaste posts a
+mouse click as well as keystrokes, and letting go over something that is not a text field
+clicks that instead.
+
 ## 1.3.1 — 2026-09-23
 
 ### Fixed

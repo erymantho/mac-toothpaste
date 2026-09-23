@@ -786,6 +786,28 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## Drag to type became the default — 2026-09-23
+
+Drag-to-type shipped in 1.3.0 as an opt-in, for the reasons in the entry that added it:
+it is the only thing in the app that posts a mouse event, and a release over something
+that is not a text field clicks that thing. It was switched on by default a few hours
+after that release, once it had been in use. The reasons for the opt-in did not stop
+being true; what changed is where they are said. The README now states in *What this is,
+plainly* that the app clicks as well as types out of the box, instead of describing a
+setting most people would never open.
+
+What an update does to an existing install is decided by one line. The setting used to be
+read with `bool(forKey:)`, which returns `false` both for "switched off" and for "never
+stored", and it is stored only when someone flips the switch. Reading it with
+`object(forKey:) as? Bool ?? true` instead — as `checkForUpdates` and `maskConcealed`
+already were — gives the three cases three outcomes: never touched takes the new default
+and turns on; switched off stays off; switched on stays on.
+
+One side effect for anyone meeting the feature for the first time: a press on a row that
+moves more than four points is a drag, not a click, and a drag let go of back over the
+panel cancels rather than arms the entry. With the feature off, that same press was a
+click.
+
 ## 1.3.1 — 2026-09-23
 
 A patch: the one fix in the entry below. Its annotation repeats what 1.3.0 added, under a

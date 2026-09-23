@@ -20,7 +20,7 @@ struct ClickCatcher: NSViewRepresentable {
 
     /// Non-nil only when `Settings.dragToType` is on. Dragging an entry out of the panel
     /// then means "click here and type it", which is the one thing in this app that posts
-    /// a mouse event rather than a key event — hence the switch, and hence off by default.
+    /// a mouse event rather than a key event — hence the switch.
     var onDrop: ((NSPoint) -> Void)?
 
     /// What the card beside the pointer shows while the entry is carried: the row's own

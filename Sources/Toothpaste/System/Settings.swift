@@ -19,12 +19,12 @@ final class Settings: ObservableObject {
     /// Whether dragging an entry out of the panel clicks where it is dropped and types
     /// there.
     ///
-    /// Off by default, and that default is a property rather than a preference. Every
-    /// other thing this app posts is a key event; with this on it also posts a mouse
-    /// click, which makes it an autoclicker as well as an autotyper and changes what has
-    /// to be said about it on a managed machine. It also adds a failure the arm-and-click
-    /// flow does not have: release over something that is not a text field and that is
-    /// what gets clicked.
+    /// On by default since 2026-09-23; it started as an opt-in. What that costs is still
+    /// true and is said up front in the README: every other thing this app posts is a key
+    /// event, and with this on it also posts a mouse click, which makes it an autoclicker
+    /// as well as an autotyper and changes what has to be said about it on a managed
+    /// machine. It also adds a failure the arm-and-click flow does not have: release over
+    /// something that is not a text field and that is what gets clicked.
     @Published var dragToType: Bool {
         didSet { UserDefaults.standard.set(dragToType, forKey: Self.dragToTypeKey) }
     }
@@ -104,10 +104,13 @@ final class Settings: ObservableObject {
             .flatMap { try? JSONDecoder().decode(KeyCombo.self, from: $0) } ?? .fallback
         appearance = UserDefaults.standard.string(forKey: Self.appearanceKey)
             .flatMap(AppAppearance.init(rawValue:)) ?? .system
-        // Defaults to on, and `object(forKey:)` rather than `bool(forKey:)` because the
-        // latter cannot tell "switched off" from "never set".
+        // These three default to on, and `object(forKey:)` rather than `bool(forKey:)`
+        // because the latter cannot tell "switched off" from "never set". For `dragToType`
+        // that is also what carries existing installs across: the value is stored only once
+        // someone flips the switch, so a copy that never did takes the new default, and one
+        // that switched it off stays off.
         checkForUpdates = UserDefaults.standard.object(forKey: Self.checkForUpdatesKey) as? Bool ?? true
         maskConcealed = UserDefaults.standard.object(forKey: Self.maskConcealedKey) as? Bool ?? true
-        dragToType = UserDefaults.standard.bool(forKey: Self.dragToTypeKey)
+        dragToType = UserDefaults.standard.object(forKey: Self.dragToTypeKey) as? Bool ?? true
     }
 }
