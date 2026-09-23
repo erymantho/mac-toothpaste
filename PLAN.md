@@ -808,6 +808,13 @@ moves more than four points is a drag, not a click, and a drag let go of back ov
 panel cancels rather than arms the entry. With the feature off, that same press was a
 click.
 
+The crosshair went at the same time. It was added so the gesture would announce itself
+(see *Drag to type, and the property it costs*), and the card carried beside the pointer
+has done that since; the pointer is now the ordinary arrow, whose tip is where the click
+lands, as with any click. The card sits 18 points right of the tip and 14 below, clear of
+an arrow about 12 points wide. Removing it meant removing the push and the pop together —
+one without the other leaves the cursor stack unbalanced.
+
 ## 1.3.1 — 2026-09-23
 
 A patch: the one fix in the entry below. Its annotation repeats what 1.3.0 added, under a

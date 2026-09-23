@@ -67,9 +67,8 @@ struct ClickCatcher: NSViewRepresentable {
             // A few points of slack, so a heavy-handed click is still a click.
             guard dx * dx + dy * dy > 16 else { return }
             dragging = true
-            // The crosshair stays: it is where the click will land, and the card beside it
-            // is only there to say what will be typed.
-            NSCursor.crosshair.push()
+            // The pointer stays the ordinary arrow. Its tip is where the click will land,
+            // as with any click, and the card beside it says what will be typed.
             if let card = dragCard?() {
                 DragPreview.shared.show(card.text, pinned: card.pinned, at: NSEvent.mouseLocation)
             }
@@ -99,7 +98,7 @@ struct ClickCatcher: NSViewRepresentable {
 
         /// A row can leave the list mid-drag — the entry removed, the history trimmed by a
         /// new copy — and then no mouse-up ever reaches it. Without this the card would stay
-        /// on screen and the cursor stuck as a crosshair.
+        /// on screen.
         override func viewWillMove(toWindow newWindow: NSWindow?) {
             if newWindow == nil, dragging {
                 endDrag()
@@ -111,7 +110,6 @@ struct ClickCatcher: NSViewRepresentable {
 
         private func endDrag() {
             DragPreview.shared.hide()
-            NSCursor.pop()
             onDragChanged?(false)
         }
     }

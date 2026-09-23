@@ -3,13 +3,14 @@ import SwiftUI
 
 /// The entry itself, carried beside the pointer while it is dragged out of the panel.
 ///
-/// Asked for once drag-to-type existed: a crosshair alone said *where*, but not *what*.
+/// Asked for once drag-to-type existed: the pointer alone said *where*, but not *what*.
 /// It is the row as the panel draws it — same font, padding, fill and pin stripe — lifted
 /// with a slight tilt so it reads as picked up rather than as a tooltip.
 ///
 /// Three things are deliberate:
 /// - **Beside the pointer, never under it.** The click lands on the pointer's tip, and a
-///   card over the tip would cover the very field being aimed at. The crosshair stays.
+///   card over the tip would cover the very field being aimed at. The pointer itself is
+///   the ordinary arrow, and the card sits clear of it.
 /// - **Invisible to the mouse.** The drop, and the click made there, must go to whatever is
 ///   underneath. It is also taken off screen before that click is posted.
 /// - **A masked entry stays masked.** Carrying it across the screen must not be the thing

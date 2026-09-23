@@ -480,7 +480,8 @@ These are the non-obvious ones. Read before touching the relevant area.
     decoration.** `DragPreview` draws the row — its real text, fill and pin stripe — tilted
     three degrees beside the pointer while drag-to-type carries it.
     - **Beside the pointer, not under it.** The click lands on the pointer's tip; a card over
-      the tip would hide the field being aimed at. The crosshair stays for that reason.
+      the tip would hide the field being aimed at. The pointer is the ordinary arrow — the
+      crosshair it used to become was dropped — and the card sits clear of the arrow.
     - **Invisible to the mouse, and gone before the click.** `ignoresMouseEvents`, at
       `CGWindowLevelForKey(.draggingWindow)` — the level macOS draws its own drag images at —
       and ordered out in `mouseUp` before `onDrop` posts anything.
@@ -489,7 +490,7 @@ These are the non-obvious ones. Read before touching the relevant area.
     The shadow is SwiftUI's, not the window's: a window shadow is computed once when the
     window appears and stays square under a card that has since tilted. And a row can leave
     the list mid-drag, so `ClickCatcher` also ends the drag in `viewWillMove(toWindow: nil)`,
-    or the card would stay on screen and the cursor stuck as a crosshair.
+    or the card would stay on screen.
 
 ## Divergences from 0xpaste
 

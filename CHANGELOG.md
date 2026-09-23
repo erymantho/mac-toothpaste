@@ -28,6 +28,10 @@ yourself, it stays off. Worth knowing on a managed machine: with it on, Toothpas
 mouse click as well as keystrokes, and letting go over something that is not a text field
 clicks that instead.
 
+**The pointer stays the normal arrow while you drag an entry.** It used to turn into a
+crosshair. The tip of the arrow is where Toothpaste clicks, as with any click, and the
+entry travelling beside it already shows that a drag is under way.
+
 ## 1.3.1 — 2026-09-23
 
 ### Fixed
