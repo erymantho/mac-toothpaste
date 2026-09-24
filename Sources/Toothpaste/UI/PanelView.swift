@@ -285,35 +285,37 @@ struct PanelView: View {
         // Masking off means the dots go, and with them the eye button that undid them.
         let hidden = settings.maskConcealed && item.concealed && !revealed.contains(item.id)
         let shown = hidden ? String(repeating: "•", count: min(item.characterCount, 20)) : item.preview
-        return ZStack(alignment: .trailing) {
-            // The whole row is the click target, and it is caught in AppKit rather than
-            // by a tap gesture — see `ClickCatcher`. The buttons' width is reserved by a
-            // hidden copy so the catcher can cover everything without swallowing them.
-            HStack(spacing: 6) {
-                Text(shown)
-                    .font(.system(size: 12, design: .monospaced))
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        // The whole row is the click target, and it is caught in AppKit rather than by a
+        // tap gesture — see `ClickCatcher`. The buttons' width is reserved by a hidden copy
+        // so the catcher can cover everything without swallowing them.
+        return HStack(spacing: 6) {
+            Text(shown)
+                .font(.system(size: 12, design: .monospaced))
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                rowButtons(item, hidden: hidden).hidden()
+            rowButtons(item, hidden: hidden).hidden()
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .contentShape(Rectangle())
+        .overlay(ClickCatcher(
+            onClick: { onArm(item) },
+            onDrop: settings.dragToType ? { onDrop(item, $0) } : nil,
+            // Exactly what the row shows, so a masked entry travels as dots.
+            dragCard: { (shown, item.pinned) },
+            onDragChanged: { carried = $0 ? item.id : nil },
+            onHoverChanged: { inside in
+                if inside { hovered = item.id } else if hovered == item.id { hovered = nil }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .contentShape(Rectangle())
-            .overlay(ClickCatcher(
-                onClick: { onArm(item) },
-                onDrop: settings.dragToType ? { onDrop(item, $0) } : nil,
-                // Exactly what the row shows, so a masked entry travels as dots.
-                dragCard: { (shown, item.pinned) },
-                onDragChanged: { carried = $0 ? item.id : nil },
-                onHoverChanged: { inside in
-                    if inside { hovered = item.id } else if hovered == item.id { hovered = nil }
-                }
-            ))
-
-            // Above the catcher in z-order, which is what keeps them clickable.
+        ))
+        // Above the catcher in z-order, which is what keeps them clickable, and an
+        // overlay rather than a sibling so the buttons are given the row's full height.
+        // Four points from the edge puts the last glyph where it was with eight, now
+        // that its slot is wider than the glyph.
+        .overlay(alignment: .trailing) {
             rowButtons(item, hidden: hidden)
-                .padding(.horizontal, 8)
+                .padding(.trailing, 4)
         }
         .background {
             ZStack(alignment: .leading) {
@@ -346,7 +348,9 @@ struct PanelView: View {
     }
 
     private func rowButtons(_ item: ClipItem, hidden: Bool) -> some View {
-        HStack(spacing: 6) {
+        // No spacing: the slots meet, so there is no gap between two buttons for a click
+        // to fall through to the row.
+        HStack(spacing: 0) {
             iconButton(item.pinned ? "pin.fill" : "pin") { store.togglePin(item.id) }
                 .foregroundStyle(item.pinned ? Color.accentColor : Color.secondary)
             if item.concealed, settings.maskConcealed {
@@ -398,9 +402,19 @@ struct PanelView: View {
         return isPinned ? Theme.rowPinned : Theme.row
     }
 
+    /// A row button's target is its whole slot — the same width for every icon and the
+    /// full height of the row — not the glyph. At 9 points the glyph alone was a target a
+    /// few points across, a different size for each icon, and a click just beside one fell
+    /// through to the row and armed the entry instead. Sixteen is about what a glyph and the
+    /// gap after it took before, so the icons stay close to where they were.
+    private static let buttonSlot: CGFloat = 16
+
     private func iconButton(_ symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol).font(.system(size: 9))
+                .frame(width: Self.buttonSlot)
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
