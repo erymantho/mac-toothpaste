@@ -32,6 +32,9 @@ struct PanelView: View {
     @State private var carried: ClipItem.ID?
     /// The row under the pointer, which is where a click would land.
     @State private var hovered: ClipItem.ID?
+    /// The row button under the pointer, by entry and icon, so its whole slot can show
+    /// what a click there will hit.
+    @State private var hoveredButton: String?
 
     /// The search is a plain string this view maintains, not an `NSTextField`.
     ///
@@ -78,6 +81,7 @@ struct PanelView: View {
         .onAppear {
             selection = nil
             hovered = nil
+            hoveredButton = nil
             confirmingClear = false
             confirmingRemove = nil
             query = ""
@@ -294,7 +298,7 @@ struct PanelView: View {
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            rowButtons(item, hidden: hidden).hidden()
+            rowButtons(item, hidden: hidden, live: false).hidden()
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
@@ -314,7 +318,7 @@ struct PanelView: View {
         // Four points from the edge puts the last glyph where it was with eight, now
         // that its slot is wider than the glyph.
         .overlay(alignment: .trailing) {
-            rowButtons(item, hidden: hidden)
+            rowButtons(item, hidden: hidden, live: true)
                 .padding(.trailing, 4)
         }
         .background {
@@ -347,25 +351,32 @@ struct PanelView: View {
         .animation(.easeOut(duration: 0.12), value: carried)
     }
 
-    private func rowButtons(_ item: ClipItem, hidden: Bool) -> some View {
+    /// `live` is false for the copy that only reserves the buttons' width. That copy sits
+    /// four points left of the real one, so tracking the pointer over it would light the
+    /// wrong slot.
+    private func rowButtons(_ item: ClipItem, hidden: Bool, live: Bool) -> some View {
         // No spacing: the slots meet, so there is no gap between two buttons for a click
         // to fall through to the row.
         HStack(spacing: 0) {
-            iconButton(item.pinned ? "pin.fill" : "pin") { store.togglePin(item.id) }
-                .foregroundStyle(item.pinned ? Color.accentColor : Color.secondary)
+            iconButton(item.pinned ? "pin.fill" : "pin", key: "\(item.id)/pin", live: live,
+                       colour: item.pinned ? .accentColor : .secondary) { store.togglePin(item.id) }
             if item.concealed, settings.maskConcealed {
-                iconButton(hidden ? "eye" : "eye.slash") {
+                iconButton(hidden ? "eye" : "eye.slash", key: "\(item.id)/reveal", live: live) {
                     if hidden { revealed.insert(item.id) } else { revealed.remove(item.id) }
                 }
             }
-            iconButton("doc.on.doc") { onCopy(item) }
-            removeButton(item)
+            iconButton("doc.on.doc", key: "\(item.id)/copy", live: live) { onCopy(item) }
+            removeButton(item, live: live)
         }
     }
 
-    private func removeButton(_ item: ClipItem) -> some View {
+    private func removeButton(_ item: ClipItem, live: Bool) -> some View {
         let confirming = confirmingRemove == item.id
-        return iconButton(confirming ? "xmark.circle.fill" : "xmark") {
+        // A pending confirmation keeps its warning colour under the pointer: that colour
+        // is the message, and the pointer is usually still over it when it appears.
+        return iconButton(confirming ? "xmark.circle.fill" : "xmark", key: "\(item.id)/remove",
+                          live: live, colour: confirming ? Theme.warning : .secondary,
+                          keepsColour: confirming) {
             if !item.pinned || confirming {
                 store.remove(item.id)
                 confirmingRemove = nil
@@ -373,7 +384,6 @@ struct PanelView: View {
                 confirmingRemove = item.id
             }
         }
-        .foregroundStyle(confirming ? Theme.warning : Color.secondary)
         .help(item.pinned ? "Pinned — click twice to delete" : "Delete")
     }
 
@@ -409,12 +419,35 @@ struct PanelView: View {
     /// gap after it took before, so the icons stay close to where they were.
     private static let buttonSlot: CGFloat = 16
 
-    private func iconButton(_ symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+    /// Under the pointer the whole slot lights in the accent, which shows the target
+    /// rather than leaving it to be guessed from the glyph. The glyph turns primary there:
+    /// an accent pin on an accent fill would all but vanish, and the accent is not ours to
+    /// pick a contrast for.
+    private func iconButton(
+        _ symbol: String, key: String, live: Bool, colour: Color = .secondary,
+        keepsColour: Bool = false, action: @escaping () -> Void
+    ) -> some View {
+        let lit = live && hoveredButton == key
+        return Button(action: action) {
             Image(systemName: symbol).font(.system(size: 9))
+                .foregroundStyle(lit && !keepsColour ? Color.primary : colour)
                 .frame(width: Self.buttonSlot)
                 .frame(maxHeight: .infinity)
+                .background {
+                    if lit {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.accentColor.opacity(0.3))
+                            .padding(.vertical, 2)
+                    }
+                }
                 .contentShape(Rectangle())
+                .background {
+                    if live {
+                        PointerTracker { inside in
+                            if inside { hoveredButton = key } else if hoveredButton == key { hoveredButton = nil }
+                        }
+                    }
+                }
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)

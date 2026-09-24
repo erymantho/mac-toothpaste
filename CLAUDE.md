@@ -182,6 +182,7 @@ Sources/Toothpaste/
     PanelController.swift      NSPanel host, show/hide, remembered position
     PanelView.swift            search, list, rows, profile menu, clear button
     ClickCatcher.swift         a row's click, caught in AppKit — see gotcha 16
+    PointerTracker.swift       which row button the pointer is over, click-transparent
     DragPreview.swift          the entry carried beside the pointer — see gotcha 19
     UpdateFailedView.swift     a failed update, on the launch it produced
     ReleaseNotesView.swift     release notes, shown the same way before and after an update
@@ -323,7 +324,8 @@ These are the non-obvious ones. Read before touching the relevant area.
     icon, wash and border in the accent, and the *clear* confirmation uses `Theme.warning`
     like a pinned row's delete. The accent is left on things that are not text — the pin
     stripe, the armed border, the query caret, and since 1.4.0 the fill behind a row being
-    typed, the wash under the pointer and the outline of the dragged card. Each sits
+    typed, the wash under the pointer, the outline of the dragged card and the slot of the
+    row button under the pointer. Each sits
     *behind* or *around* primary text, never as its colour. `make appearances` cannot show
     other accents: `.accentColor(_:)` on a view does not reach `Color.accentColor`, which
     follows the system setting — measured — so yellow has to be reasoned about, not
@@ -469,6 +471,17 @@ These are the non-obvious ones. Read before touching the relevant area.
     ask twice — the same self-disarming confirmation the `clear` button uses. Guarding
     both would have put friction on the case where nothing is at stake, which is most of
     them.
+    **A row button is its slot, not its glyph.** At 9 points a glyph alone was a target a
+    few points across, a different size per icon, and a click just beside one fell through
+    to the catcher and armed the entry. Each button now owns a 16-point slot the full height
+    of the row, the slots meet with no spacing, and the one under the pointer lights in the
+    accent so the target can be seen. Two details keep that working. The visible buttons are
+    an `overlay` of the row, not a `ZStack` sibling, because only an overlay is handed the
+    row's height. And the pointer is tracked by `PointerTracker`, an `.activeAlways`
+    tracking area that returns `nil` from `hitTest` so every click still reaches the
+    `Button` above it — confirmed to work with another window in front. The hidden copy
+    that reserves the buttons' width gets no tracker: it sits four points left of the real
+    one and would light the wrong slot.
 17. **Anything the app wants noticed has to reach the menu bar.** It is the only surface
     that is always on screen. The settings window is not somewhere anyone opens
     unprompted, which is how an available update sat unseen — it was in settings and in

@@ -786,6 +786,37 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## A row button is its slot, not its glyph — 2026-09-24
+
+Reported as "I have to click pixel-perfect on an icon, and a click just beside one arms the
+entry". Both halves were true. Each row button was a plain `Button` around a 9-point SF
+Symbol, so its target was the glyph's own frame — a few points across and a different size
+for every icon — and the six points between two buttons belonged to nobody, so a click
+there went to `ClickCatcher` underneath and armed the entry.
+
+Each button now owns a slot: 16 points wide, the full height of the row, `contentShape`
+covering all of it, and the slots set side by side with no spacing, so a click anywhere
+across the button area hits a button. Sixteen is about what a glyph and the gap after it
+took before, and with the trailing padding cut from 8 to 4 the last icon sits exactly where
+it was; the others moved by a point or two into even spacing, and a long entry lost about
+one character before its ellipsis. Row heights did not change, compared in the renders.
+
+The full height needed one structural change. The visible buttons were a `ZStack` sibling
+of the row's content, and a sibling is sized by its own content, so a slot asking for
+`maxHeight: .infinity` got the glyph's height. As an `overlay` of the row they are handed
+the row's size, and the slot fills it. The z-order is unchanged: they are still above the
+catcher, which is what keeps them clickable (gotcha 16).
+
+Then the target was made visible. The slot under the pointer fills with the accent at 30%,
+inset two points top and bottom, and its glyph turns primary so an accent pin does not
+vanish into an accent fill; a pending delete confirmation keeps its warning colour, because
+that colour is the message. The pointer is tracked by `PointerTracker`, the same
+`.activeAlways` tracking area the row's hover uses, with `hitTest` returning `nil` so it
+never takes a click from the button above it. Checked by the person who asked for it: one
+button lit at a time, buttons still act on one click, and both work with another window in
+front. Lighter than feared, too — the row's own wash says "this entry", the slot says "this
+button", and only one slot is ever lit.
+
 ## 1.4.0 — 2026-09-24
 
 A minor release: three new uses of the accent colour — the row being typed, the row under

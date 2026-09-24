@@ -15,6 +15,17 @@ Each version lists what is new apart from what was fixed, which is the same spli
 shows before and after an update. *Changed* is for what behaves differently without being
 new, and *Removed* for what is gone.
 
+## Unreleased
+
+### Fixed
+
+**A click just beside a row's button selected the entry instead.** The buttons were only
+as large as their icons, a few points across and a different size for each, so hitting
+one meant hitting it exactly. Each button now owns an equal slot the full height of the
+row, with no gap between them, and the one under the pointer lights up in your accent
+colour so you can see what a click there will hit. The icons stay where they were, give or
+take a point or two.
+
 ## 1.4.0 — 2026-09-24
 
 ### New
