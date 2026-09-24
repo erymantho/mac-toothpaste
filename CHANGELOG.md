@@ -15,7 +15,7 @@ Each version lists what is new apart from what was fixed, which is the same spli
 shows before and after an update. *Changed* is for what behaves differently without being
 new, and *Removed* for what is gone.
 
-## Unreleased
+## 1.4.0 — 2026-09-24
 
 ### New
 
@@ -55,6 +55,15 @@ updating, and the arrow leaving the menu bar icon says it worked; a window repea
 was one more thing to close. Settings → Updates still shows what is new since your old
 version. An update that fails still opens a window saying why, because the old version
 coming back looks exactly like the new one arriving.
+
+### Fixed
+
+**The window reporting a failed update could open behind the app you were working in.**
+That is where you are while an update builds, so the one window meant to tell you it had
+not worked could go unseen. macOS turns down a request to bring an app forward when the app
+started without a click, as it does after an update; the window is now put in front
+regardless, without taking the keyboard from what you are typing in. The window asking for
+the Accessibility permission at startup opens the same way and gets the same fix.
 
 ## 1.3.1 — 2026-09-23
 

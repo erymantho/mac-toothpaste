@@ -786,6 +786,15 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## 1.4.0 — 2026-09-24
+
+A minor release: three new uses of the accent colour — the row being typed, the row under
+the pointer, the dragged card — and three changes: drag-to-type on by default, the ordinary
+arrow while dragging, and a window after an update only when it failed — plus one fix, for
+windows opened at launch that came up behind the app in front. Detailed in the entries
+below. Its annotation repeats what 1.3.0 and 1.3.1 added, for copies still on 1.2.x,
+which show only the newest tag's notes.
+
 ## The accent colour, doing more than marking — 2026-09-24
 
 The accent colour follows the macOS setting, so everyone's panel is in their own colour.
