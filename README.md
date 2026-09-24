@@ -115,12 +115,12 @@ an arrow and Settings → Updates offers to install it. Pressing the button quit
 Toothpaste, pulls and rebuilds from the checkout you installed from, and starts the new
 version — about a minute, no terminal. It shows the release notes first, for every
 version since yours and split into what is new and what was fixed, so you see what you
-are getting before you take it. Afterwards a window says which version you came from and
-what you got, or why the update did not finish.
+are getting before you take it. When it worked, the arrow on the menu bar icon is gone
+and Settings → Updates shows what is new since your old version. When it did not, the old
+version comes back and a window says why, with the build log a click away.
 
-(That is from 1.3.0 on. A copy on 1.2.x still shows only the newest version's notes, as
-plain text, and opens no window afterwards — the update that brings it to 1.3.0 is still
-run by its own older updater.)
+(A copy on 1.2.x shows only the newest version's notes, as plain text — the update that
+takes it past 1.2 is still run by its own older updater.)
 
 Two things it says in the confirmation, and they are both true: unpinned history is never
 written to disk, so it is gone after the restart, and the button **builds and runs

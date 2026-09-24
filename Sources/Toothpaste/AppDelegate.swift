@@ -20,7 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let updater = Updater()
     private let settingsNavigation = SettingsNavigation()
     private var onboardingWindow: SettingsWindowController?
-    private var whatsNewWindow: SettingsWindowController?
+    private var failureWindow: SettingsWindowController?
     private var settingsWindow: SettingsWindowController?
     private var watcher: ClipboardWatcher?
 
@@ -34,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setUpUpdater()
         // Before onboarding, so that if both want the screen the permission wins the
         // front — it is the one that stops the app working.
-        reportUpdateOutcome()
+        reportFailedUpdate()
         store.maxItems = settings.maxItemsForStore
         setUpClipboardWatching()
         setUpSettingsWindow()
@@ -206,26 +206,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Says whether the update worked, on the launch it produced.
+    /// Says that an update failed, on the launch it produced. A successful one says
+    /// nothing here — see `UpdateFailedView` for why.
     ///
-    /// Only on that launch: both markers are consumed, so an ordinary start says nothing.
-    private func reportUpdateOutcome() {
-        guard updater.justUpdatedFrom != nil || updater.previousFailure != nil else { return }
-        updater.loadInstalledReleases()
+    /// Only on that launch: the marker is consumed, so an ordinary start says nothing.
+    private func reportFailedUpdate() {
+        guard let failure = updater.previousFailure else { return }
 
-        whatsNewWindow = SettingsWindowController(
+        failureWindow = SettingsWindowController(
             title: "Toothpaste \(AppVersion.short)",
-            size: NSSize(width: 460, height: 400)
+            size: NSSize(width: 460, height: 300)
         ) { [weak self] in
             guard let self else { return AnyView(EmptyView()) }
-            return AnyView(WhatsNewView(updater: self.updater) { [weak self] in
+            return AnyView(UpdateFailedView(failure: failure, updater: self.updater) { [weak self] in
                 // Dismissing is also the acknowledgement, so a failure stops being
                 // reported in settings once it has actually been read.
                 self?.updater.dismissFailure()
-                self?.whatsNewWindow?.close()
+                self?.failureWindow?.close()
             })
         }
-        whatsNewWindow?.show()
+        failureWindow?.show()
     }
 
     private func setUpSettingsWindow() {

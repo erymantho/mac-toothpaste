@@ -67,13 +67,11 @@ private final class Renderer: NSObject, NSApplicationDelegate {
                 self.shoot(self.preferences(.general), 760, 660, "settings", choice)
                 self.shoot(self.preferences(.updates), 760, 660, "settings-updates", choice)
                 self.shoot(self.notesInForm(Self.sectionedNotes), 760, 420, "release-notes-tab", choice)
-                self.shoot(self.notesInScroll(Self.sectionedNotes), 460, 400, "release-notes-window", choice)
-                self.shoot(self.notesInScroll(Self.proseNotes), 460, 260, "release-notes-prose", choice)
+                self.shoot(self.notesInForm(Self.proseNotes), 760, 300, "release-notes-prose", choice)
                 self.shoot(self.skippedVersions, 760, 560, "release-notes-skipped", choice)
                 self.shoot(self.dragCards, 420, 200, "drag-card", choice)
                 self.shoot(self.onboarding, 460, 430, "onboarding", choice)
-                self.shoot(self.whatsNew(failed: false), 460, 400, "whatsnew", choice)
-                self.shoot(self.whatsNew(failed: true), 460, 400, "whatsnew-failed", choice)
+                self.shoot(self.updateFailed, 460, 300, "update-failed", choice)
             }
             print("\nwritten to \(self.outDir.path)")
             exit(0)
@@ -122,13 +120,11 @@ private final class Renderer: NSObject, NSApplicationDelegate {
         ))
     }
 
-    /// Release notes cannot be reached through the real windows here. Both read them from
-    /// the checkout — the Updates tab from the tags around the running version, and
-    /// `WhatsNewView` from the tags an update stepped over — and a bare binary has no
-    /// `ToothpasteSource`, so there is no checkout to read. They are rendered instead inside
-    /// the same two containers those windows use, because the container is what decides the
-    /// layout: rendered as a bare root, the view reported an ideal height of several
-    /// thousand points.
+    /// Release notes cannot be reached through the real window here. The Updates tab reads
+    /// them from the tags in the checkout, and a bare binary has no `ToothpasteSource`, so
+    /// there is no checkout to read. They are rendered instead inside the container that tab
+    /// uses, because the container is what decides the layout: rendered as a bare root, the
+    /// view reported an ideal height of several thousand points.
     private func notesInForm(_ annotation: String) -> AnyView {
         AnyView(
             Form {
@@ -138,15 +134,6 @@ private final class Renderer: NSObject, NSApplicationDelegate {
             }
             .formStyle(.grouped)
             .padding()
-        )
-    }
-
-    private func notesInScroll(_ annotation: String) -> AnyView {
-        AnyView(
-            ScrollView {
-                ReleaseNotesView(notes: ReleaseNotes(annotation))
-            }
-            .padding(20)
         )
     }
 
@@ -215,47 +202,23 @@ private final class Renderer: NSObject, NSApplicationDelegate {
         AnyView(OnboardingView(accessibility: accessibility, onDone: {}))
     }
 
-    /// `Updater` reads its markers once, in `init`, so the state to render is set up by
-    /// planting the file and then building one. Safe only because the support folder is a
+    /// The window a failed update leaves behind. It is handed its failure directly, so
+    /// nothing has to be planted for it; building an `Updater` still consumes whatever
+    /// markers the support folder holds, which is safe only because that folder is a
     /// scratch one — see the guard in `main`, which refuses to run otherwise.
-    ///
-    /// Release notes come out empty here: a bare binary has no `ToothpasteSource`, so
-    /// there is no checkout to read a tag from. That is a real state of this window too.
-    private func whatsNew(failed: Bool) -> AnyView {
-        let support = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("com.michaelsmith.toothpaste", isDirectory: true)
-        try? FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
-
-        let failure = support.appendingPathComponent("update-failed")
-        let success = support.appendingPathComponent("update-succeeded")
-        try? FileManager.default.removeItem(at: failure)
-        try? FileManager.default.removeItem(at: success)
-
-        if failed {
-            try? "the build failed. See update.log.".write(to: failure, atomically: true, encoding: .utf8)
-        } else {
-            try? "1.2.1".write(to: success, atomically: true, encoding: .utf8)
-            // A real one is written before the build it reports, so it is older than the
-            // binary reading it; `Updater` ignores one that is not.
-            try? FileManager.default.setAttributes([.modificationDate: Date.distantPast],
-                                                   ofItemAtPath: success.path)
-        }
-
-        // Load as `AppDelegate.reportUpdateOutcome` does. Without a checkout this settles at
-        // once on "no notes"; left unloaded, the view would show its loading state forever.
-        let updater = Updater()
-        updater.loadInstalledReleases()
-        return AnyView(WhatsNewView(updater: updater, onDone: {}))
+    private var updateFailed: AnyView {
+        AnyView(UpdateFailedView(failure: "the build failed. See update.log.",
+                                 updater: Updater(), onDone: {}))
     }
 
     /// `windowBackground` stands in for what a real titled window draws behind its content.
     /// `cacheDisplay` captures the content view only, and the window's own background is
     /// drawn outside it — so any window whose SwiftUI content paints no background of its
     /// own came out transparent, which in dark mode means white text on nothing: a blank
-    /// image. That was true of `WhatsNewView` and the onboarding window, unnoticed for as
-    /// long as only their light renders were being looked at. The panel is the exception,
-    /// because it is meant to be transparent around its rounded corners.
+    /// image. That was true of the post-update window, then `WhatsNewView`, and of the
+    /// onboarding window, unnoticed for as long as only their light renders were being
+    /// looked at. The panel is the exception, because it is meant to be transparent around
+    /// its rounded corners.
     private func shoot(_ root: AnyView, _ width: CGFloat, _ height: CGFloat,
                        _ name: String, _ choice: AppAppearance, windowBackground: Bool = true) {
         let content = windowBackground

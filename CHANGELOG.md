@@ -32,6 +32,12 @@ clicks that instead.
 crosshair. The tip of the arrow is where Toothpaste clicks, as with any click, and the
 entry travelling beside it already shows that a drag is under way.
 
+**No window opens after an update that worked.** You read the release notes just before
+updating, and the arrow leaving the menu bar icon says it worked; a window repeating it
+was one more thing to close. Settings → Updates still shows what is new since your old
+version. An update that fails still opens a window saying why, because the old version
+coming back looks exactly like the new one arriving.
+
 ## 1.3.1 — 2026-09-23
 
 ### Fixed

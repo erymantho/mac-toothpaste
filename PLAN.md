@@ -786,6 +786,32 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## One window around an update, not two — 2026-09-24
+
+An update came with two windows: the confirmation before it, and from 1.3.0 a report after
+it. That was one too many, and the one to lose was the report after a success.
+
+The confirmation stays because of what it says. Unpinned history is gone after the
+restart, and the button builds and runs whatever is in the repository — the security
+posture requires that to be said before the update, not after.
+
+The report after a success repeated what had just been read. The release notes were in the
+Updates tab a minute earlier, and the arrow on the menu bar icon disappears when the update
+lands, which says it worked. For that launch the Updates tab still lists every release
+since the version replaced, for anyone who wants to read them again.
+
+The report after a failure stays, and for the reason the window was built at all: a failed
+update brings the old version back, and that looks exactly like the new one arriving. It
+used to leave only a note in the settings window, which went unread. So `WhatsNewView`
+became `UpdateFailedView`, a window with nothing in it but the failure, the log and the
+build it is on, and `AppDelegate` opens it only when `update-failed` was found. Nothing about
+the markers changed: `update.sh` still writes the success marker, and `Updater` still reads
+it, because the Updates tab uses the version in it.
+
+It takes effect on the update to the first version that has it, not one later. The window
+is opened by the app that starts after the update — the new one — not by the helper, which
+is always the old version's.
+
 ## The pointer that stays hidden after typing — 2026-09-24
 
 While Toothpaste types, the pointer disappears and stays gone until the mouse moves. That

@@ -46,8 +46,8 @@ Local commits are fine either way. The gate is the push, because other people no
 from this repo and a version they receive should be one that has actually been used.
 
 **Tag annotations are user-facing copy.** The app shows the annotation of a tag as that
-version's release notes — in Settings → Updates before an update, and in `WhatsNewView`
-after one. Write them for someone deciding whether to take the update, and do not open
+version's release notes, in Settings → Updates — before an update, and after one for as
+long as that launch lasts. Write them for someone deciding whether to take the update, and do not open
 with the version number: the UI already states it one line above.
 **Split them into what is new and what was fixed**, because that is the distinction the
 people using the tool asked to see. `ReleaseNotes` reads labels on a line of their own,
@@ -183,7 +183,7 @@ Sources/Toothpaste/
     PanelView.swift            search, list, rows, profile menu, clear button
     ClickCatcher.swift         a row's click, caught in AppKit — see gotcha 16
     DragPreview.swift          the entry carried beside the pointer — see gotcha 19
-    WhatsNewView.swift         what an update did, on the launch it produced
+    UpdateFailedView.swift     a failed update, on the launch it produced
     ReleaseNotesView.swift     release notes, shown the same way before and after an update
     WindowDragBlocker.swift    where dragging the panel must not start
     WindowDragHandle.swift     where it must — see gotcha 15
@@ -345,8 +345,8 @@ These are the non-obvious ones. Read before touching the relevant area.
     **Look at the dark renders too, not only the light ones.** `cacheDisplay` captures the
     content view and not the window's own background, so a window whose SwiftUI content
     paints no background came out transparent — white text on nothing in dark mode, a
-    blank image. `WhatsNewView` rendered like that from the day it was added, and so did
-    the onboarding window, and nobody saw, because only their light renders were being
+    blank image. The post-update window, then `WhatsNewView`, rendered like that from the
+    day it was added, and so did the onboarding window, and nobody saw, because only their light renders were being
     opened. `shoot` now paints
     `windowBackgroundColor` behind every window, as the real window does; the panel is
     exempt because it is meant to be transparent around its corners.
@@ -387,10 +387,12 @@ These are the non-obvious ones. Read before touching the relevant area.
       why the first release with the success marker could not produce its own report.
     - **The outcome is reported by marker file, on the launch the update produced.**
       `update.sh` writes `update-succeeded` with the version it replaced, or
-      `update-failed` with a reason; `Updater` reads and consumes both in `init`, and
-      `WhatsNewView` reports either. The failure marker used to wait until dismissed, so
-      closing the report with the window's close button instead of *Done* brought it back
-      on every later launch.
+      `update-failed` with a reason; `Updater` reads and consumes both in `init`. A failure
+      opens `UpdateFailedView`; a success opens nothing, and is what makes Settings →
+      Updates list every release since the version replaced, for that launch, rather than
+      only the running one. The failure marker used to wait until dismissed, so closing the
+      report with the window's close button instead of *Done* brought it back on every later
+      launch.
       - The **success** marker is written *before* `make install`, and withdrawn if it fails.
         `install.sh` ends by opening the new app, which reads its markers as it starts, so a
         marker written after `make install` returned was racing the app it was meant for.
@@ -410,9 +412,13 @@ These are the non-obvious ones. Read before touching the relevant area.
       fixes take effect from the first update *after* 1.3.0. It has to work this way round because by the time
       the outcome is known the app that asked for it no longer exists. An ordinary launch
       finds no marker and says nothing.
-      Both outcomes need reporting, not just the failure. An update ends with the app
-      quietly reappearing, which is indistinguishable from a restart — and a failure was
-      worse still, leaving a note in a settings window nobody had a reason to open.
+      **A failure must open a window; a success need not.** A failed update brings the old
+      version back, which looks exactly like a successful one, and a note in the settings
+      window alone went unread. Success had a window too, from 1.3.0 until 1.4.0, and it
+      was removed as one window too many around an update: its notes had just been read in
+      the Updates tab, and the arrow leaving the menu bar icon already says it worked. Do not
+      remove the failure window on the same reasoning — it is the only thing that tells the
+      two outcomes apart.
 15. **`isMovableByWindowBackground` does nothing inside an `NSHostingView` on macOS 27.**
     The panel became impossible to move, and it looks like a bug in our code from every
     angle: the flag is still set, and `mouseDownCanMoveWindow` on the hit view still reads

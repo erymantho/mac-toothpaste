@@ -1,9 +1,8 @@
 import SwiftUI
 
 /// Release notes laid out the way the people reading them asked for: what is new, apart
-/// from what was fixed. Shown before an update in the Updates tab and after one in
-/// `WhatsNewView`, so both read the same way. See `ReleaseNotes` for how an annotation is
-/// split.
+/// from what was fixed. Shown in the Updates tab, before an update and after one. See
+/// `ReleaseNotes` for how an annotation is split.
 struct ReleaseNotesView: View {
     let notes: ReleaseNotes
 
