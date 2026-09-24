@@ -491,6 +491,13 @@ These are the non-obvious ones. Read before touching the relevant area.
     window appears and stays square under a card that has since tilted. And a row can leave
     the list mid-drag, so `ClickCatcher` also ends the drag in `viewWillMove(toWindow: nil)`,
     or the card would stay on screen.
+20. **The pointer vanishes while typing, and that is left alone.** The destination app
+    hides it on every key event, as it does for a person typing, until the mouse moves.
+    `NSCursor.setHiddenUntilMouseMoves(false)` from here does nothing, since this app is
+    not in front. A one-point `mouseMoved` there and back does bring it back — measured,
+    locally and over RDP — and was deliberately not kept: it is a mouse event nobody asked
+    for, posted to undo something that ends on its own. See PLAN.md, *The pointer that
+    stays hidden after typing*.
 
 ## Divergences from 0xpaste
 

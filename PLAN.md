@@ -786,6 +786,32 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## The pointer that stays hidden after typing — 2026-09-24
+
+While Toothpaste types, the pointer disappears and stays gone until the mouse moves. That
+is the destination app's doing, not this one's: an app receiving key events hides the
+pointer as it does for a person typing — `NSCursor.setHiddenUntilMouseMoves` — and it
+comes back on the first movement. Nobody at the keyboard typed, though, so bringing it
+back when typing ends seemed worth trying. Two ways were measured, each 200 ms after the
+last key:
+
+- **Asking for it back did nothing.** `NSCursor.setHiddenUntilMouseMoves(false)` from this
+  app changed nothing. The app that hid the pointer is in front; this one is not.
+- **Moving the mouse worked.** A `mouseMoved` event one point to the right and one straight
+  back brought the pointer back within those 200 ms, with no visible jump, in TextEdit and
+  in an RDP session alike.
+
+The second was not kept. It posts a mouse event nobody asked for, after every paste, to
+undo ordinary macOS behaviour that ends by itself on the next movement. With drag-to-type
+switched off it would also have ended "this app posts keystrokes and nothing else", and
+even with it on there is a difference: the click belongs to a gesture someone made, the
+move would not. A move can also raise hover effects and tooltips wherever the pointer
+rests, and over RDP it is sent to the far side.
+
+Stopping the pointer from hiding at all was not attempted. The hiding happens in the
+other app, again on every keystroke, so preventing it would mean undoing it after each
+one — a pointer that flickers while text is typed.
+
 ## Drag to type became the default — 2026-09-23
 
 Drag-to-type shipped in 1.3.0 as an opt-in, for the reasons in the entry that added it:
