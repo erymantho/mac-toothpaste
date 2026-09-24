@@ -31,11 +31,30 @@ struct ClickCatcher: NSViewRepresentable {
     /// Tells the row it is being carried, so it can fade the way a Finder item does.
     var onDragChanged: ((Bool) -> Void)?
 
+    /// Tells the row the pointer is over it. Tracked here rather than with `onHover` for
+    /// the reason this view exists at all: the panel is inactive for most of its life, and
+    /// an AppKit tracking area can be told to work regardless.
+    var onHoverChanged: ((Bool) -> Void)?
+
     final class CatcherView: NSView {
         var onClick: () -> Void = {}
         var onDrop: ((NSPoint) -> Void)?
         var dragCard: (() -> (text: String, pinned: Bool))?
         var onDragChanged: ((Bool) -> Void)?
+        var onHoverChanged: ((Bool) -> Void)?
+
+        override func updateTrackingAreas() {
+            super.updateTrackingAreas()
+            trackingAreas.forEach(removeTrackingArea)
+            addTrackingArea(NSTrackingArea(
+                rect: .zero,
+                options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                owner: self
+            ))
+        }
+
+        override func mouseEntered(with event: NSEvent) { onHoverChanged?(true) }
+        override func mouseExited(with event: NSEvent) { onHoverChanged?(false) }
 
         private var pressOrigin: NSPoint?
         private var dragging = false
@@ -120,6 +139,7 @@ struct ClickCatcher: NSViewRepresentable {
         view.onDrop = onDrop
         view.dragCard = dragCard
         view.onDragChanged = onDragChanged
+        view.onHoverChanged = onHoverChanged
         return view
     }
 
@@ -131,5 +151,6 @@ struct ClickCatcher: NSViewRepresentable {
         view.onDrop = onDrop
         view.dragCard = dragCard
         view.onDragChanged = onDragChanged
+        view.onHoverChanged = onHoverChanged
     }
 }

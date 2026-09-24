@@ -30,6 +30,8 @@ struct PanelView: View {
     @State private var confirmingRemove: ClipItem.ID?
     /// The row being dragged out of the panel, which fades while it is carried.
     @State private var carried: ClipItem.ID?
+    /// The row under the pointer, which is where a click would land.
+    @State private var hovered: ClipItem.ID?
 
     /// The search is a plain string this view maintains, not an `NSTextField`.
     ///
@@ -75,6 +77,7 @@ struct PanelView: View {
         .focusEffectDisabled()
         .onAppear {
             selection = nil
+            hovered = nil
             confirmingClear = false
             confirmingRemove = nil
             query = ""
@@ -302,14 +305,29 @@ struct PanelView: View {
                 onDrop: settings.dragToType ? { onDrop(item, $0) } : nil,
                 // Exactly what the row shows, so a masked entry travels as dots.
                 dragCard: { (shown, item.pinned) },
-                onDragChanged: { carried = $0 ? item.id : nil }
+                onDragChanged: { carried = $0 ? item.id : nil },
+                onHoverChanged: { inside in
+                    if inside { hovered = item.id } else if hovered == item.id { hovered = nil }
+                }
             ))
 
             // Above the catcher in z-order, which is what keeps them clickable.
             rowButtons(item, hidden: hidden)
                 .padding(.horizontal, 8)
         }
-        .background(rowFill(isSelected: isSelected, isPinned: item.pinned))
+        .background {
+            ZStack(alignment: .leading) {
+                rowFill(isSelected: isSelected, isPinned: item.pinned)
+                // Lighter than the keyboard selection, which it can sit on top of. Not while
+                // an entry is being dragged: the pointer is aiming elsewhere then.
+                if hovered == item.id, carried == nil {
+                    Color.accentColor.opacity(0.12)
+                }
+                if let mark = state.typing, mark.itemID == item.id {
+                    TypingFill(mark: mark).transition(.opacity)
+                }
+            }
+        }
         .overlay(alignment: .leading) {
             // A stripe rather than a tint: pinned and selected can both be true, and
             // they have to stay tellable apart.
@@ -353,6 +371,24 @@ struct PanelView: View {
         }
         .foregroundStyle(confirming ? Theme.warning : Color.secondary)
         .help(item.pinned ? "Pinned — click twice to delete" : "Delete")
+    }
+
+    /// The text going out, drawn behind the row in the accent colour. It fills as the
+    /// characters are typed, flashes full when the last one has gone, and when cancelled
+    /// stays where it stopped until the mark is let go. Behind the text, never as its
+    /// colour — the accent is whatever the user picked, and yellow text is unreadable.
+    private struct TypingFill: View {
+        let mark: TypingMark
+
+        var body: some View {
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(Color.accentColor.opacity(mark.phase == .finished ? 0.45 : 0.28))
+                    .frame(width: geometry.size.width * (mark.phase == .finished ? 1 : mark.progress))
+            }
+            .animation(.linear(duration: 0.12), value: mark.progress)
+            .animation(.easeOut(duration: 0.2), value: mark.phase)
+        }
     }
 
     /// The accent background means "Return acts on this one". Pinning gets a lighter

@@ -17,6 +17,24 @@ new, and *Removed* for what is gone.
 
 ## Unreleased
 
+### New
+
+**Your accent colour shows what the panel is doing.** It was already the colour of the pin
+stripe and of an entry waiting for its destination; it now also does three things that
+had no colour before.
+
+- **The row being typed fills from left to right** as the characters go out, flashes when
+  the last one has gone, and fades. Cancel with Esc and it stays where it stopped for a
+  moment, so you can see how far it got. Over a remote session a long entry takes a few
+  seconds, and until now the only sign of progress was the status line.
+- **The row under the pointer is lit faintly**, which shows where a click would land. It
+  works while another window is in front, which is how the panel is normally used.
+- **A dragged entry carries an outline and a glow** in the same colour.
+
+All three sit behind or around the text, never in it. The accent is whatever colour you
+picked for macOS, and some of them — yellow above all — are unreadable as text on a light
+background.
+
 ### Changed
 
 **Dragging an entry to a field now works without switching it on first.** Drag an entry

@@ -39,8 +39,11 @@ final class TypingEngine: ObservableObject {
     /// Discards cached layouts. Call when the active input source changes.
     func invalidateLayouts() { layoutCache.removeAll() }
 
+    /// `progress` is told the fraction of `text` handled so far, after every character.
     @discardableResult
-    func type(_ text: String, using profile: TargetProfile) async -> Result {
+    func type(
+        _ text: String, using profile: TargetProfile, progress: ((Double) -> Void)? = nil
+    ) async -> Result {
         var result = Result()
         guard Accessibility.isTrustedNow, !text.isEmpty else { return result }
         guard let layout = layout(for: profile) else { return result }
@@ -60,8 +63,9 @@ final class TypingEngine: ObservableObject {
 
         let source = CGEventSource(stateID: .hidSystemState)
         cancelRequested = false
+        let total = Double(text.count)
 
-        for character in text {
+        for (index, character) in text.enumerated() {
             if cancelRequested {
                 result.cancelled = true
                 break
@@ -95,6 +99,7 @@ final class TypingEngine: ObservableObject {
                 }
             }
 
+            progress?(Double(index + 1) / total)
             try? await Task.sleep(for: .milliseconds(Int(profile.characterDelayMs)))
         }
 

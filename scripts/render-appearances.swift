@@ -64,6 +64,7 @@ private final class Renderer: NSObject, NSApplicationDelegate {
                 self.settings.appearance = choice
                 self.shoot(self.panel, 360, 320, "panel", choice, windowBackground: false)
                 self.shoot(self.armedPanel, 360, 320, "panel-armed", choice, windowBackground: false)
+                self.shoot(self.typingPanel, 360, 320, "panel-typing", choice, windowBackground: false)
                 self.shoot(self.preferences(.general), 760, 660, "settings", choice)
                 self.shoot(self.preferences(.updates), 760, 660, "settings-updates", choice)
                 self.shoot(self.notesInForm(Self.sectionedNotes), 760, 420, "release-notes-tab", choice)
@@ -93,6 +94,7 @@ private final class Renderer: NSObject, NSApplicationDelegate {
 
     private var panel: AnyView {
         state.armed = nil
+        state.typing = nil
         return AnyView(PanelView(
             store: store, state: state, profiles: profiles, settings: settings,
             onArm: { _ in }, onDrop: { _, _ in }, onOpenSettings: {}, onCopy: { _ in },
@@ -104,6 +106,24 @@ private final class Renderer: NSObject, NSApplicationDelegate {
     /// palettes could plausibly disagree about whether it reads.
     private var armedPanel: AnyView {
         state.armed = store.items.first
+        state.typing = nil
+        return AnyView(PanelView(
+            store: store, state: state, profiles: profiles, settings: settings,
+            onArm: { _ in }, onDrop: { _, _ in }, onOpenSettings: {}, onCopy: { _ in },
+            onDisarm: {}, onClose: {}
+        ))
+    }
+
+    /// An entry partway through being typed, the accent filling behind its text.
+    ///
+    /// Only under the system accent. `accentColor(_:)` on the view does not reach
+    /// `Color.accentColor`, which follows the system setting regardless — measured: a
+    /// "yellow" render came out in the machine's own accent — so the other accents cannot
+    /// be shown from here, only reasoned about. The fill sits behind primary text, never
+    /// as its colour, which is what keeps a yellow accent readable.
+    private var typingPanel: AnyView {
+        state.armed = nil
+        state.typing = store.items.dropFirst().first.map { TypingMark(itemID: $0.id, progress: 0.6) }
         return AnyView(PanelView(
             store: store, state: state, profiles: profiles, settings: settings,
             onArm: { _ in }, onDrop: { _, _ in }, onOpenSettings: {}, onCopy: { _ in },

@@ -124,7 +124,10 @@ struct DragPreviewCard: View {
                 if pinned { Rectangle().fill(Color.accentColor).frame(width: 3) }
             }
             .clipShape(RoundedRectangle(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.border))
+            // The accent says whose entry is travelling: the outline, and a glow under the
+            // drop shadow that comes up with the pickup.
+            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.accentColor, lineWidth: 1.5))
+            .shadow(color: Color.accentColor.opacity(lifted ? 0.5 : 0), radius: lifted ? 7 : 0)
             .shadow(color: .black.opacity(lifted ? 0.30 : 0.12),
                     radius: lifted ? 10 : 3, y: lifted ? 5 : 1)
             .rotationEffect(.degrees(lifted ? DragPreview.tilt : 0))

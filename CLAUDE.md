@@ -187,7 +187,8 @@ Sources/Toothpaste/
     ReleaseNotesView.swift     release notes, shown the same way before and after an update
     WindowDragBlocker.swift    where dragging the panel must not start
     WindowDragHandle.swift     where it must — see gotcha 15
-    PanelState.swift           what the panel shows while open (armed item, status)
+    PanelState.swift           what the panel shows while open (armed item, status,
+                               the entry being typed and how far along)
     SettingsWindowController.swift
     SettingsView.swift         General / Typing profiles / Layout check / Updates
     HotkeyRecorder.swift       records a new hotkey inside the settings window
@@ -321,7 +322,13 @@ These are the non-obvious ones. Read before touching the relevant area.
     The panel followed the same rule: the armed banner's words are primary with only its
     icon, wash and border in the accent, and the *clear* confirmation uses `Theme.warning`
     like a pinned row's delete. The accent is left on things that are not text — the pin
-    stripe, the armed border, the query caret.
+    stripe, the armed border, the query caret, and since 1.4.0 the fill behind a row being
+    typed, the wash under the pointer and the outline of the dragged card. Each sits
+    *behind* or *around* primary text, never as its colour. `make appearances` cannot show
+    other accents: `.accentColor(_:)` on a view does not reach `Color.accentColor`, which
+    follows the system setting — measured — so yellow has to be reasoned about, not
+    rendered. The hover wash is tracked by `ClickCatcher` with an `.activeAlways` tracking
+    area rather than `onHover`, for the reason in gotcha 16: the panel is rarely active.
     `Settings.appearance` can override the system choice; it is applied by setting
     `NSApp.appearance`, so every window follows at once and windows opened later inherit
     it. Apply it from the delegate's launch, never from `Settings.init` — that object is
@@ -484,7 +491,10 @@ These are the non-obvious ones. Read before touching the relevant area.
     a password cost two extra clicks.
 19. **The dragged entry is a window of its own, and three things about it are not
     decoration.** `DragPreview` draws the row — its real text, fill and pin stripe — tilted
-    three degrees beside the pointer while drag-to-type carries it.
+    three degrees beside the pointer while drag-to-type carries it, outlined in the accent
+    with a glow that comes up with the pickup. On a pinned card the stripe merges into that
+    outline, which was accepted: the card says what is travelling, the list says what is
+    pinned.
     - **Beside the pointer, not under it.** The click lands on the pointer's tip; a card over
       the tip would hide the field being aimed at. The pointer is the ordinary arrow — the
       crosshair it used to become was dropped — and the card sits clear of the arrow.

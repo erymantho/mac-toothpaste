@@ -53,7 +53,8 @@ Press **⌃⌥V**, or click 📝 in the menu bar.
 1. **Pick an item.** The panel stays open and the item is *armed*.
 2. **Click the field you want it in.** Any window will do, including one inside a
    remote session. That click is what chooses the destination.
-3. It types. **Esc cancels** mid-stream, wherever focus is.
+3. It types, and the row fills in your accent colour as it goes. **Esc cancels**
+   mid-stream, wherever focus is.
 
 <img src="docs/armed.png" width="360" alt="An armed entry: the panel stays open with a banner reading 'now click the field you want this typed into', and the chosen row is outlined.">
 

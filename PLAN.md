@@ -786,6 +786,42 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## The accent colour, doing more than marking — 2026-09-24
+
+The accent colour follows the macOS setting, so everyone's panel is in their own colour.
+Until now it only marked things: the stripe on a pinned row, the outline of an armed one,
+the wash of the armed banner, the query caret. It now also shows three things happening.
+
+- **Typing progress.** `TypingEngine.type` reports the fraction of the text handled after
+  every character, and `PanelState.typing` carries it with the entry's id and a phase —
+  running, finished, cancelled — plus an id per delivery, so a mark that has run its
+  course cannot clear the next one when the same entry is sent twice in a row. The row
+  fills behind its text, flashes full when the last character has gone and fades after
+  450 ms; cancelled, it holds where it stopped for 1.5 s. A delivery that typed nothing —
+  no permission, no layout — clears the mark without a flash, because a flash would say
+  something had been sent. The panel was already on screen for the length of a delivery;
+  this only gave it something to show.
+- **Hover.** A faint wash on the row under the pointer, lighter than the keyboard
+  selection it can sit on. An earlier version had an accent fill on the top entry at all
+  times, which read as meaning something when nothing had been chosen; that was removed on
+  2026-09-09. The wash shows only where a click would land. It is tracked by an
+  `.activeAlways` tracking area in `ClickCatcher` rather than by SwiftUI's `onHover`,
+  because the panel is inactive for most of its life — the same reason the row's click is
+  caught there — and it is off while an entry is being dragged, when the pointer is aiming
+  somewhere else.
+- **The dragged card** has an accent outline and a glow under its drop shadow. On a pinned
+  card the stripe merges into the outline; the list is where pinning is shown.
+
+One rule for all three: behind or around primary text, never as its colour. It was learned
+the hard way in 1.3.0, when a yellow accent put the armed instruction at 1.56:1.
+
+That rule matters more because the renders cannot check it. `make appearances` was given a
+typing state, and asked for it under a yellow and a green accent through `.accentColor(_:)`:
+both came out in the machine's own accent. `Color.accentColor` follows the system setting
+regardless of what the view says, so other accents are reasoned about instead. Yellow at
+the fill's 28% over the light row gives roughly `#EDDEA5` with black text on it; over the
+dark row an olive with white text on it. Readable in both, because the text is not yellow.
+
 ## One window around an update, not two — 2026-09-24
 
 An update came with two windows: the confirmation before it, and from 1.3.0 a report after

@@ -361,8 +361,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             holdStatus("typing into \(name)  ·  \(profile.name)  ·  esc cancels", seconds: 3600)
             startEscapeWatch()
-            let result = await engine.type(item.text, using: profile)
+            let mark = TypingMark(itemID: item.id)
+            panelState.typing = mark
+            let result = await engine.type(item.text, using: profile) { [weak self] fraction in
+                guard self?.panelState.typing?.delivery == mark.delivery else { return }
+                self?.panelState.typing?.progress = fraction
+            }
             stopEscapeWatch()
+            endTypingMark(mark, typed: result.typed, cancelled: result.cancelled)
 
             if result.cancelled {
                 holdStatus("cancelled after \(result.typed) characters into \(name)")
@@ -375,6 +381,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 // a wrong password, not like a tool that gave up.
                 flagIncomplete(skipped: result.skipped, profile: profile)
             }
+        }
+    }
+
+    /// The row shows how the delivery ended, then lets go of it. A finished one flashes
+    /// full and fades; a cancelled one holds where it stopped a little longer, since that
+    /// is the thing worth seeing. Nothing typed at all — no permission, no layout — shows
+    /// nothing rather than a flash that would claim otherwise.
+    private func endTypingMark(_ mark: TypingMark, typed: Int, cancelled: Bool) {
+        guard panelState.typing?.delivery == mark.delivery else { return }
+        guard typed > 0 || cancelled else {
+            panelState.typing = nil
+            return
+        }
+        panelState.typing?.phase = cancelled ? .cancelled : .finished
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(cancelled ? 1500 : 450))
+            guard let self, self.panelState.typing?.delivery == mark.delivery else { return }
+            withAnimation(.easeOut(duration: 0.6)) { self.panelState.typing = nil }
         }
     }
 
