@@ -40,8 +40,13 @@ final class SettingsWindowController {
         }
 
         // An accessory app has to activate deliberately, or the window opens behind
-        // whatever the user was in.
+        // whatever the user was in. Since macOS 14 that is a request the system may turn
+        // down, and it does when nobody clicked anything — the app started on its own, as
+        // after an update, which is exactly when the failure report opens. So the window
+        // is also ordered to the front regardless, which works while the app is inactive
+        // and does not take the keyboard from whatever the user is typing in.
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
+        window?.orderFrontRegardless()
     }
 }

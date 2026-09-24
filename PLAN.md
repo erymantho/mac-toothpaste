@@ -848,6 +848,17 @@ It takes effect on the update to the first version that has it, not one later. T
 is opened by the app that starts after the update — the new one — not by the helper, which
 is always the old version's.
 
+**Simulating a failure found a second problem.** Quitting the app, planting an
+`update-failed` marker with the text `update.sh` writes, and opening the app again — the
+order a real failure happens in — brought the window up behind the terminal that was in
+front. `SettingsWindowController.show()` called `NSApp.activate(ignoringOtherApps: true)`,
+and since macOS 14 activation is a request the system may decline; it declines when the app
+started without anyone clicking it. During a real update that is always the case, because
+the user has gone back to work while it builds. The window is now also ordered front with
+`orderFrontRegardless()`, which works for an inactive app and does not take the keyboard.
+Run again the same way, it opened in front. The same function opened the 1.3.x report and
+opens the Accessibility window at startup, so both were exposed to it.
+
 ## The pointer that stays hidden after typing — 2026-09-24
 
 While Toothpaste types, the pointer disappears and stays gone until the mouse moves. That

@@ -514,6 +514,14 @@ These are the non-obvious ones. Read before touching the relevant area.
     locally and over RDP — and was deliberately not kept: it is a mouse event nobody asked
     for, posted to undo something that ends on its own. See PLAN.md, *The pointer that
     stays hidden after typing*.
+21. **`NSApp.activate` is a request since macOS 14, and a launch nobody clicked is
+    refused.** A window opened at launch by an app that started on its own — after an
+    update, from `install.sh`'s `open`, at login — opened behind whatever the user was in.
+    For the failed-update report that defeats the point of it: during an update the user
+    is working somewhere else. `SettingsWindowController.show()` therefore also calls
+    `orderFrontRegardless()`, which works while the app is inactive and leaves the keyboard
+    where it was, so an Enter meant for another app does not press *Done*. Seen once each
+    way on a simulated failure — behind without it, in front with it.
 
 ## Divergences from 0xpaste
 
