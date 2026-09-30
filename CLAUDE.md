@@ -633,8 +633,14 @@ Be honest about this in the UI and the README:
   nothing else — concealed entries stay out of `history.json` either way, and that rule
   must not become reachable from a display preference.
 - Items marked concealed by the source app are **never written to disk** (memory only).
-  So are copies from a password manager's browser extension, which a browser cannot mark
-  and which are recognised by where they came from instead — see gotcha 8.
+  So are copies from a password manager's browser extension, which a browser gives no way
+  to mark and which are recognised by where they came from instead — see gotcha 8.
+- **A secret goes back on the clipboard marked.** The panel's copy button writes a
+  concealed entry's text together with `ConcealedType`, as one `NSPasteboardItem` in one
+  call, so Toothpaste never undoes a password manager's mark for the clipboard managers
+  after it, and no reader sees the text without its marker. It does not keep the copy off
+  Universal Clipboard — Chromium does that for its own secrets with `.currentHostOnly` —
+  which would be a separate decision.
 - The app types your clipboard contents as keystrokes, which is functionally an
   autotyper. That is the point, but it deserves a clear-eyed mention.
 - **With `Settings.dragToType` on, it also clicks.** Dropping an entry makes the app post

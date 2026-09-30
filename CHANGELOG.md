@@ -50,6 +50,10 @@ Chromium rather than seen happen.
 clears by writing a single invisible character, which is now ignored as whitespace is.
 Found in Bitwarden's source rather than seen happen.
 
+**Copying a secret from the panel put it back on the clipboard unmarked.** The copy button
+wrote only the text, so another clipboard manager running alongside recorded in full what
+your password manager had asked it to skip. It now keeps the secret mark.
+
 **A click just beside a row's button selected the entry instead.** The buttons were only
 as large as their icons, a few points across and a different size for each, so hitting
 one meant hitting it exactly. Each button now owns an equal slot the full height of the

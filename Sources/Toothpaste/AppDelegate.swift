@@ -443,10 +443,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return NSWorkspace.shared.frontmostApplication
     }
 
+    /// A secret goes back on the clipboard marked as one, or this would be the one place
+    /// where Toothpaste undid the mark: another clipboard manager would then record in full
+    /// what the password manager asked it to skip. One item carrying both types, written in
+    /// one call, so nobody reading in between sees the text without its marker.
     private func copyToPasteboard(_ item: ClipItem) {
+        let entry = NSPasteboardItem()
+        entry.setString(item.text, forType: .string)
+        if item.concealed {
+            entry.setData(Data(), forType: NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType"))
+        }
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setString(item.text, forType: .string)
+        pasteboard.writeObjects([entry])
         watcher?.acknowledgeOwnWrite()
     }
 

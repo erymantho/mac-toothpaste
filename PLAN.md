@@ -891,6 +891,14 @@ with the case named for it. The ninth, removing the stale-count check before the
 covered by the check after it: removing both is caught. The check after the reads guards a
 window of microseconds and has no case of its own.
 
+**The panel's own copy button undid the mark.** Also from the review: `copyToPasteboard`
+wrote a concealed entry's text as bare `.string`, so a clipboard manager honouring the
+convention — Maccy does — recorded in full a password its manager had marked. It now writes
+one `NSPasteboardItem` carrying the text and `ConcealedType`, in one call; setting the
+marker after the text would have recreated, for other readers, the very gap `poll` now
+waits out. It does not use `.currentHostOnly`, which is how Chromium keeps its own
+confidential copies off Universal Clipboard; that is a separate decision.
+
 Measured end to end only for the case that started it: the pasteboard side of Bitwarden's
 popup in Brave.
 
