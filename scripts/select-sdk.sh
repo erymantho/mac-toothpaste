@@ -12,8 +12,8 @@
 # 10 GB Xcode install for a 1.6 MB app, build against the newest SDK that does not need
 # the plugin.
 #
-# Delete this once Command Line Tools ships the plugin, and drop the calls in
-# Makefile and scripts/bundle.sh with it.
+# Delete this once Command Line Tools ships the plugin, and drop the calls in the
+# Makefile, scripts/bundle.sh and scripts/render-appearances.sh with it.
 set -euo pipefail
 
 PLUGINS="$(xcrun --find swift-frontend 2>/dev/null | xargs dirname)/../lib/swift/host/plugins"

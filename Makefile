@@ -1,6 +1,6 @@
 APP := dist/Toothpaste.app
 
-.PHONY: build app run cert install reset-permission verify appearances clean
+.PHONY: build app run cert install reset-permission verify verify-watcher appearances clean
 
 # See scripts/select-sdk.sh: Command Line Tools 6.4 ships an SDK it cannot fully build
 # against. Expands to nothing when the toolchain is healthy.
@@ -32,8 +32,13 @@ reset-permission:
 	defaults delete com.michaelsmith.toothpaste panelOrigin 2>/dev/null || true
 	@echo "Permission cleared. Run 'make install', then grant when prompted."
 
-verify: app
+verify: app verify-watcher
 	./scripts/verify-capture.sh
+
+# What the clipboard watcher captures and what it counts as secret, against a private
+# pasteboard. Unlike verify-capture.sh it touches nothing of yours, so it can run any time.
+verify-watcher:
+	./scripts/verify-watcher.sh
 
 # Both palettes, side by side, without switching the machine over. Writes PNGs to
 # dist/appearances and never puts a window on screen.

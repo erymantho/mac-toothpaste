@@ -786,6 +786,114 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## Secrets copied from a browser extension — 2026-09-30
+
+Two reports that sounded like opposites. One person found the masking of secrets
+aggressive; a colleague found it masked almost nothing, and read the switch — then labelled
+*Mask entries marked secret* — as hiding every entry. Both were right about what they saw,
+and both were copying from Bitwarden.
+
+**The source app decides, and they differ.** Toothpaste has only ever masked what the app
+being copied from marks with `org.nspasteboard.ConcealedType`. Bitwarden's desktop app
+(2026.9.0, read from its `app.asar`) sends every copy through one `copyToClipboard`, which
+marks it unless the caller passes `allowHistory: true`; the word occurs nowhere else in the
+app, so usernames and URLs are marked as well as passwords. That is the aggressive half.
+The other half: the colleague copied from Bitwarden's **browser extension**, and browsers
+give their extensions no way to put that marker on a copy.
+
+**What a Chromium browser does record.** `scripts/inspect-pasteboard.swift` was taught to
+print the scheme and host of `org.chromium.source-url`. Copying a password from the
+Bitwarden extension's popup in Brave 1.96 (Chromium 154) put exactly four types on the
+pasteboard — `NSStringPboardType`, `org.chromium.internal.source-rfh-token`,
+`org.chromium.source-url`, `public.utf8-plain-text` — and the source read
+`chrome-extension://nngceckbapebfimnlniiiahkandclblb`, Bitwarden's Chrome Web Store ID. No
+marker, but a signature.
+
+**Then it was researched before it was built**, by four independent lines of research,
+each re-checked by a second pass that tried to refute it against the primary source. Of
+112 verdicts, 97 confirmed a claim, 8 corrected one and 7 could not check it. What stands,
+from Chromium 154's source: since Chrome 121, `ClipboardMac` writes
+`org.chromium.source-url` as the full URL of the *main frame* of the frame that copied,
+taken from the browser process's own state, so a page cannot forge it. Copies made on an
+extension's own pages — popup, side panel, a tab of its own, its offscreen document —
+therefore carry `chrome-extension://<id>`; every Bitwarden copy path in Chromium is one of
+those. A copy made by a content script, or by an extension's iframe inside a web page,
+carries the **web page's** URL. Browsers do mark copies from their own password managers —
+Chromium's Manage Passwords bubble and chrome://password-manager, and by code reading
+Firefox's about:logins — but nothing a page or an extension does can ask for the marker.
+
+**A list of password managers, not every extension.** "Any `chrome-extension://` copy is
+secret" was the simpler rule and would have caught managers nobody listed. But Adobe
+Acrobat's extension, with over three hundred million users, shows PDFs on a page of its
+own — `chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/…`, read from its shipped code —
+so by the main-frame rule text copied from a PDF there would have counted as a secret; not
+measured. (Chrome's own PDF viewer is less of a worry: it runs inside the tab by default
+in 154, so its copies should carry the PDF's URL — also read from source.) So
+`PasswordManagerExtensions` holds 97 IDs for 45 products. Each store packages a product
+separately, so a product has an ID per store it is in: the Chrome Web Store (also used by
+Brave, Arc, Vivaldi and Opera installs from it), Edge Add-ons, Opera's own store, and beta
+and nightly channels. 93 were fetched from their store listing on 2026-09-30 — the Chrome
+Web Store's detail page and its update service
+(`clients2.google.com/service/update2/crx?response=updatecheck&x=id%3D<id>%26uc`), Edge's
+`microsoftedge.microsoft.com/addons/getproductdetailsbycrxid/<id>`, and the `aoc:app_id`
+meta tag on addons.opera.com. Four have no listing: two IDs 1Password's native-messaging
+host accepts, the delisted classic 1Password extension (from an archived listing), and the
+Opera ID Remote Desktop Manager has built in. They are kept because a false match costs
+little. A new password manager is added by putting its store ID in that file, with the
+store named beside it.
+
+**What it cannot see**, and says so in the settings window, the README and the changelog:
+- a copy made from a password manager's menu *inside* a web page — 1Password's inline menu,
+  Proton Pass's dropdown, Keeper's and Dashlane's in-page prompts — which the browser credits
+  to the web page;
+- Safari: WebKit records the copying page's origin, in
+  `com.apple.WebKit.custom-pasteboard-data`, but an extension's page would carry
+  `safari-web-extension://<UUID>` with a UUID Apple rotates, so no list can name the
+  extension; and Bitwarden's Safari extension bypasses WebKit and writes bare text through
+  its app, indistinguishable from `pbcopy`;
+- Firefox, which writes no source type, and whose extension hosts are random per profile.
+- And in Chromium browsers other than Chrome and Brave, it should work but was not
+  measured: each can change the value through its own embedder hook.
+
+**Found on the way, and fixed with it.** A writer puts its types on the pasteboard one
+call at a time, and only the first — emptying the pasteboard — moves `changeCount`.
+Bitwarden desktop 2026.9.0, through its clipboard library arboard 3.6.1, empties the
+pasteboard, writes the text and only then adds `ConcealedType`; so a 1.4.0 poll landing
+between the last two steps recorded a desktop-marked password as ordinary text. Chromium
+writes its source type after the text too, which the new rule depends on, and a poll
+landing just after any emptying found nothing and lost the copy. `ClipboardWatcher.poll`
+now reads 50 ms after it sees a change, only if nothing has changed since, checks again
+after reading, and reads nothing once stopped. Bitwarden's extension clears the clipboard
+in Chromium by writing a single NUL, which would have become an entry that looks empty; the
+C0 control characters and DEL now count as empty, as whitespace does — format characters
+such as a right-to-left mark do not. All of this comes from reading source, not from seeing
+it happen.
+
+**Reviewed, then tested against deliberate bugs.** A second round — four reviewers, one
+lens each, every finding re-checked by an agent trying to refute it — produced 31 findings;
+25 were judged real, several of them the same point seen from two lenses, and 6 were
+refuted. What changed because of it: nine IDs the first pass had missed (NordPass's live
+"legacy" listing, the Chrome Web Store builds of F-Secure, Password Depot and Samsung
+Pass, 2FAS on Edge, Buttercup, 2FAS Pass); the store named beside every ID; the check
+after the reads; `stop()` made final; a narrower idea of "empty"; the ID taken from the
+string by hand rather than through `URLComponents`, whose handling of stray characters is
+not documented for every macOS release this runs on; and every sentence that had said a browser "cannot mark" a copy,
+that Safari "records no source", or that other Chromium browsers were covered as fact.
+It also found that the harness's race cases passed even with the wait removed, because
+nothing ran between the two steps of a write. They now turn the run loop for 10 ms there.
+
+`make verify-watcher` compiles `ClipboardWatcher` on its own and drives it against a
+private pasteboard with a unique name, so it needs no permission and touches nothing of the
+user's. It has 31 cases. Against nine deliberate bugs — reading at once, no wait, no
+stale-count check, no stop check, the old and the too-broad idea of empty, no source rule,
+no trimming of the source, `acknowledgeOwnWrite` doing nothing — it caught eight, each
+with the case named for it. The ninth, removing the stale-count check before the read, is
+covered by the check after it: removing both is caught. The check after the reads guards a
+window of microseconds and has no case of its own.
+
+Measured end to end only for the case that started it: the pasteboard side of Bitwarden's
+popup in Brave.
+
 ## A row button is its slot, not its glyph — 2026-09-24
 
 Reported as "I have to click pixel-perfect on an icon, and a click just beside one arms the

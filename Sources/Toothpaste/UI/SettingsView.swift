@@ -78,8 +78,16 @@ private struct GeneralTab: View {
             Text("Off, Toothpaste only ever posts keystrokes. On, dragging an entry out of the panel makes Toothpaste click wherever you release and type there — which works in remote sessions, and which means a release over something that is not a text field is a click on that thing instead.")
                 .font(.caption).foregroundStyle(.secondary)
 
-            Toggle("Mask entries marked secret", isOn: $settings.maskConcealed)
-            Text("Password managers tag what they copy as concealed. Those entries show as dots until you reveal one. Switching this off shows them in full, on screen, to anyone looking at it — it does not change what is stored, because concealed entries are never written to disk either way.")
+            // The scope goes in the label itself. "Mask entries marked secret" was read as
+            // hiding every entry, because what does the marking only came later, and in the
+            // word "concealed". And the caption says the source app decides, because two
+            // people copying from Bitwarden saw opposite behaviour from the same code. One
+            // copied from its desktop app, which marks everything, usernames included, and
+            // found the masking aggressive; the other copied from its browser extension,
+            // which cannot mark anything, and found it masked almost nothing. That second
+            // case is why the caption also says which extension copies are recognised.
+            Toggle("Show secrets from password managers as dots", isOn: $settings.maskConcealed)
+            Text("The app you copy from marks what is secret, and apps differ — some mark usernames too, some nothing at all. Browsers give extensions no way to mark a copy, so Toothpaste also counts a copy from a password manager's extension as secret by where it came from: from its toolbar popup, not from its menu inside a web page, in Chrome, Brave and likely other Chromium browsers. Safari and Firefox do not say which extension copied. Off, secrets are shown in full, on screen, to anyone looking at it. They are never written to disk either way.")
                 .font(.caption).foregroundStyle(.secondary)
 
             Picker("Appearance", selection: $settings.appearance) {

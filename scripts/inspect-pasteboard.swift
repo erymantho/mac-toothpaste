@@ -30,6 +30,15 @@ while Date() < deadline {
         print("  marked: \(flags.isEmpty ? "nothing — would be stored like any other text" : flags.map { conventions[$0]! }.joined(separator: ", "))")
         print("  all types present:")
         for t in types.sorted() { print("    \(t)") }
+        // Chromium browsers record which page or extension a copy came from. Only the
+        // scheme and host are printed: that is what identifies an extension, and a web
+        // page's path and query can carry things nobody should paste into a bug report.
+        let sourceType = NSPasteboard.PasteboardType("org.chromium.source-url")
+        if let source = pasteboard.string(forType: sourceType) ?? pasteboard.data(forType: sourceType)
+            .flatMap({ String(data: $0, encoding: .utf8) }) {
+            let parts = URLComponents(string: source.trimmingCharacters(in: .whitespacesAndNewlines))
+            print("  copied from: \(parts?.scheme ?? "?")://\(parts?.host ?? "?")")
+        }
         print("")
         fflush(stdout)
     }

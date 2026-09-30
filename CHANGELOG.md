@@ -17,7 +17,38 @@ new, and *Removed* for what is gone.
 
 ## Unreleased
 
+### New
+
+**A password copied from a password manager's browser extension shows as dots.** Until
+now only a password manager's own app could mark a copy as secret; browsers give their
+extensions no way to, so a password copied from Bitwarden's extension in Brave or Chrome
+arrived as ordinary text — shown in full, and written to disk if you pinned it. Toothpaste
+now recognises copies from the extensions of more than forty password managers by where
+the browser says the copy came from. That works in Chrome and Brave, and should in other
+Chromium browsers. It covers copies made in the extension's toolbar popup — not one made
+from a password manager's menu inside a web page, which the browser credits to that web
+page — and not Safari or Firefox, which do not say which extension a copy came from.
+
+### Changed
+
+**The switch for masking says what it covers.** It was labelled *Mask entries marked
+secret*, and was read as hiding every entry. It is now *Show secrets from password managers
+as dots*, and the text under it says that the app you copy from marks what is secret, that
+apps differ in how much they mark, and which copies from a browser extension are
+recognised and which are not.
+
 ### Fixed
+
+**A copy read at the wrong instant could lose its secret mark, or be missed altogether.**
+Apps put a copy on the clipboard in several steps — Bitwarden's app adds its secret mark
+after the text, and every app empties the clipboard first — and Toothpaste could look in
+between: at the text without its mark, or at an empty clipboard. It now waits a moment
+before it reads, and checks again after. Found in the source of Bitwarden's app and of
+Chromium rather than seen happen.
+
+**Bitwarden's extension clearing the clipboard would add an entry that looks empty.** It
+clears by writing a single invisible character, which is now ignored as whitespace is.
+Found in Bitwarden's source rather than seen happen.
 
 **A click just beside a row's button selected the entry instead.** The buttons were only
 as large as their icons, a few points across and a different size for each, so hitting
