@@ -197,6 +197,7 @@ Sources/Toothpaste/
     PanelView.swift            search, list, rows, profile menu, clear button
     ClickCatcher.swift         a row's click, caught in AppKit — see gotcha 16
     PointerTracker.swift       which row button the pointer is over, click-transparent
+    HoverWatch.swift           ends a hover AppKit did not end — see gotcha 22
     DragPreview.swift          the entry carried beside the pointer — see gotcha 19
     UpdateFailedView.swift     a failed update, on the launch it produced
     ReleaseNotesView.swift     release notes, shown the same way before and after an update
@@ -592,6 +593,17 @@ These are the non-obvious ones. Read before touching the relevant area.
     `orderFrontRegardless()`, which works while the app is inactive and leaves the keyboard
     where it was, so an Enter meant for another app does not press *Done*. Seen once each
     way on a simulated failure — behind without it, in front with it.
+22. **Do not trust a tracking area to report the exit.** `mouseEntered` and `mouseExited`
+    are meant to come in pairs, and after a quick pass over a small area the exit can be
+    missing: a row button stayed lit with the pointer long gone, until a slow pass over it
+    produced the pair. Two explanations were measured and ruled out — the tracking area is
+    not replaced when a hover redraws the row (zero `updateTrackingAreas` calls), and an
+    enter and an exit delivered in the same turn of the run loop clear the state correctly —
+    which leaves the event itself not arriving, and that cannot be shown without moving the
+    user's pointer. So neither `PointerTracker` nor `ClickCatcher` relies on it: while
+    something is hovered, `HoverWatch` checks where the pointer really is ten times a second
+    and ends the hover once it has left. It runs only while something is hovered, and its
+    timer ends itself if its owner goes away.
 
 ## Divergences from 0xpaste
 

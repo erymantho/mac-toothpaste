@@ -786,6 +786,37 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## A hover that did not end — 2026-09-30
+
+Reported with a screenshot: after the pointer went quickly over a row's buttons, one of
+them stayed lit as if the pointer were still over it. A slow pass cleared it; a slow pass
+never caused it. Every button did it, and it did not matter where the pointer went next.
+
+Two explanations fit that description, and both were measured on the real panel, hosted
+in an offscreen window, by calling the tracking views' `mouseEntered` and `mouseExited`
+directly — no event posted, the pointer never moved:
+
+- **The tracking area was being replaced mid-hover**, when lighting the button redrew the
+  row, and a replacement area starts out not knowing the pointer is inside. Ruled out:
+  lighting a button or a row caused zero `updateTrackingAreas` calls on any of the nine
+  button trackers or three row catchers, and no view was recreated.
+- **The exit was read against stale state**, arriving before SwiftUI had applied the
+  enter. Ruled out by sampling the slot's pixels: idle 0.69, lit 1.22, and back to 0.69
+  after an exit — also when the enter and the exit were delivered in the same turn of the
+  run loop.
+
+That leaves the exit itself not arriving after a quick pass, which fits all of it — a slow
+pass is the one that produces the missing pair — and which cannot be shown without moving
+the pointer. So the fix does not depend on the exit. `HoverWatch` checks where the pointer
+really is, ten times a second, for as long as something is hovered, and ends the hover
+once the pointer has left the view's visible part. `PointerTracker` and `ClickCatcher` both
+use it; the row's own wash had not been seen sticking, but it rests on the same events.
+Checked the same way: with the enter delivered and the exit withheld, in a window placed
+far from every screen, the slot and the row both go out within 0.4 s, and against the code
+from before the fix exactly those two checks fail. As a control, a view spanning every
+screen, so the pointer is always inside it, keeps its hover. The check was a one-off and
+is not kept as a script.
+
 ## Secrets copied from a browser extension — 2026-09-30
 
 Two reports that sounded like opposites. One person found the masking of secrets

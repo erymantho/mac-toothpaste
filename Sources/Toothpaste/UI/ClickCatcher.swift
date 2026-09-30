@@ -53,8 +53,18 @@ struct ClickCatcher: NSViewRepresentable {
             ))
         }
 
-        override func mouseEntered(with event: NSEvent) { onHoverChanged?(true) }
-        override func mouseExited(with event: NSEvent) { onHoverChanged?(false) }
+        /// Ends the hover if the exit never comes — see `HoverWatch`.
+        private let hoverWatch = HoverWatch()
+
+        override func mouseEntered(with event: NSEvent) {
+            onHoverChanged?(true)
+            hoverWatch.start(self) { [weak self] in self?.onHoverChanged?(false) }
+        }
+
+        override func mouseExited(with event: NSEvent) {
+            hoverWatch.stop()
+            onHoverChanged?(false)
+        }
 
         private var pressOrigin: NSPoint?
         private var dragging = false
@@ -119,6 +129,7 @@ struct ClickCatcher: NSViewRepresentable {
         /// new copy — and then no mouse-up ever reaches it. Without this the card would stay
         /// on screen.
         override func viewWillMove(toWindow newWindow: NSWindow?) {
+            if newWindow == nil { hoverWatch.stop() }
             if newWindow == nil, dragging {
                 endDrag()
                 dragging = false

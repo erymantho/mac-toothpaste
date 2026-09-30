@@ -12,6 +12,8 @@ struct PointerTracker: NSViewRepresentable {
 
     final class TrackingView: NSView {
         var onChange: (Bool) -> Void = { _ in }
+        /// Ends the hover if the exit never comes — see `HoverWatch`.
+        private let watch = HoverWatch()
 
         override func updateTrackingAreas() {
             super.updateTrackingAreas()
@@ -23,8 +25,20 @@ struct PointerTracker: NSViewRepresentable {
             ))
         }
 
-        override func mouseEntered(with event: NSEvent) { onChange(true) }
-        override func mouseExited(with event: NSEvent) { onChange(false) }
+        override func mouseEntered(with event: NSEvent) {
+            onChange(true)
+            watch.start(self) { [weak self] in self?.onChange(false) }
+        }
+
+        override func mouseExited(with event: NSEvent) {
+            watch.stop()
+            onChange(false)
+        }
+
+        override func viewWillMove(toWindow newWindow: NSWindow?) {
+            if newWindow == nil { watch.stop() }
+            super.viewWillMove(toWindow: newWindow)
+        }
 
         /// Transparent to clicks, so they reach the button this sits under.
         override func hitTest(_ point: NSPoint) -> NSView? { nil }
