@@ -363,9 +363,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             startEscapeWatch()
             let mark = TypingMark(itemID: item.id)
             panelState.typing = mark
-            let result = await engine.type(item.text, using: profile) { [weak self] fraction in
-                guard self?.panelState.typing?.delivery == mark.delivery else { return }
-                self?.panelState.typing?.progress = fraction
+            // The enclosing task already holds `self` for as long as the typing lasts, so
+            // this closure does not need a weak reference of its own.
+            let result = await engine.type(item.text, using: profile) { fraction in
+                guard self.panelState.typing?.delivery == mark.delivery else { return }
+                self.panelState.typing?.progress = fraction
             }
             stopEscapeWatch()
             endTypingMark(mark, typed: result.typed, cancelled: result.cancelled)
