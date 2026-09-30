@@ -37,6 +37,12 @@ as dots*, and the text under it says that the app you copy from marks what is se
 apps differ in how much they mark, and which copies from a browser extension are
 recognised and which are not.
 
+**A pinned secret has a grey pin.** Secrets are never written to disk, pinned or not, so a
+pinned secret lasts until Toothpaste quits. Its pin is now grey instead of your accent
+colour, and says so when you point at it. This matters more now that more copies count as
+secret: pin a username, copy the same username from Bitwarden later, and the pinned entry
+becomes a secret too.
+
 ### Fixed
 
 **A copy read at the wrong instant could lose its secret mark, or be missed altogether.**

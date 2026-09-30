@@ -899,6 +899,17 @@ marker after the text would have recreated, for other readers, the very gap `pol
 waits out. It does not use `.currentHostOnly`, which is how Chromium keeps its own
 confidential copies off Universal Clipboard; that is a separate decision.
 
+**A pin that stops meaning what it shows.** The review also traced what recognising more
+secrets does to pinning. Identical copies merge in `HistoryStore.add`, and the secret mark
+sticks (`existing.concealed || concealed`), while `save()` writes only entries that are
+pinned and not concealed. So a username someone pinned, then copied again from Bitwarden,
+turns secret, leaves `history.json` at the next save and is gone after a restart — with the
+pin still drawn in the accent colour. Letting the pin win was considered and not chosen:
+the same flip is what takes a password pinned before it was recognised back off the disk.
+Instead the state shows: a pinned secret's pin is grey, and its tooltip says it lasts this
+session only. Losing the pin across a restart is the accepted cost; losing it with no sign
+on the row was not.
+
 Measured end to end only for the case that started it: the pasteboard side of Bitwarden's
 popup in Brave.
 

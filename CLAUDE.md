@@ -624,7 +624,12 @@ Be honest about this in the UI and the README:
 - What is written is **plaintext JSON** in `~/Library/Application Support/<bundle-id>/`.
 - **Concealed items are excluded even when pinned.** A password manager marked them
   secret; writing a secret to a plain file because someone pinned it would quietly
-  undo that.
+  undo that. An entry can also *become* concealed while pinned: identical copies merge,
+  and the secret mark sticks, so a pinned username copied again from Bitwarden turns
+  secret and leaves the file. That happens when a copy arrives, with nobody looking at
+  the row, so a pinned secret's pin is grey rather than accented, and its tooltip says it
+  lasts this session only. The flip is kept on purpose: it also takes a password that was
+  pinned before it was recognised as one back off the disk.
 - `Settings.retentionHours` additionally forgets unpinned entries past a chosen age
   *within* a running session. Defaults to never.
 - Masking is **visual only** — it hides text on screen, it is not encryption. It is also

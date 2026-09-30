@@ -358,8 +358,17 @@ struct PanelView: View {
         // No spacing: the slots meet, so there is no gap between two buttons for a click
         // to fall through to the row.
         HStack(spacing: 0) {
+            // A pinned secret lasts this session only — secrets are never written to disk —
+            // so its pin is grey rather than accented, and says why. It has to show on the
+            // row: an entry becomes secret when a copy of the same text arrives, with nobody
+            // looking.
             iconButton(item.pinned ? "pin.fill" : "pin", key: "\(item.id)/pin", live: live,
-                       colour: item.pinned ? .accentColor : .secondary) { store.togglePin(item.id) }
+                       colour: item.pinned && !item.concealed ? .accentColor : .secondary) {
+                store.togglePin(item.id)
+            }
+            .help(item.pinned
+                  ? (item.concealed ? "Pinned for this session only: secrets are never saved" : "Unpin")
+                  : "Pin")
             if item.concealed, settings.maskConcealed {
                 iconButton(hidden ? "eye" : "eye.slash", key: "\(item.id)/reveal", live: live) {
                     if hidden { revealed.insert(item.id) } else { revealed.remove(item.id) }

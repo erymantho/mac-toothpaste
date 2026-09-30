@@ -80,7 +80,7 @@ private final class Renderer: NSObject, NSApplicationDelegate {
     }
 
     /// Enough variety that every colour in `Theme` appears at least once: a pinned row,
-    /// a concealed one, and the missing-permission warning.
+    /// a pinned secret, whose pin is grey, and the missing-permission warning.
     private func populate() {
         store.add(text: "https://github.com/erymantho/mac-toothpaste", concealed: false)
         store.add(text: "ssh deploy@10.44.2.19 -p 2202", concealed: false)
@@ -88,6 +88,7 @@ private final class Renderer: NSObject, NSApplicationDelegate {
         store.add(text: "SELECT * FROM klanten WHERE actief = true;", concealed: false)
         store.add(text: #"\\fileserver\uitwijk\aks"#, concealed: false)
         if let newest = store.items.first { store.togglePin(newest.id) }
+        if let secret = store.items.first(where: { $0.concealed }) { store.togglePin(secret.id) }
         state.statusLine = "from Microsoft Remote Desktop · profile: RDP"
         state.accessibilityGranted = false
     }
