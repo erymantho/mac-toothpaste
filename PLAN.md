@@ -786,6 +786,16 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## 1.5.0 — 2026-09-30
+
+A minor release, by the rule: it adds something. Copies from password managers' browser
+extensions are recognised as secrets in Chromium browsers, detailed in the entries below,
+along with what came of reviewing it — the wait before reading a change, the copy button
+keeping a secret's mark, the grey pin on a pinned secret, a masking switch that says what
+it covers — and a hover that could stay lit after a quick pass. The row buttons that fill
+their slots (2026-09-24) ship here too. The annotation again repeats what earlier releases
+added, for copies still on 1.2.x.
+
 ## A hover that did not end — 2026-09-30
 
 Reported with a screenshot: after the pointer went quickly over a row's buttons, one of

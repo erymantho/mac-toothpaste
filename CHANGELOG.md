@@ -15,7 +15,7 @@ Each version lists what is new apart from what was fixed, which is the same spli
 shows before and after an update. *Changed* is for what behaves differently without being
 new, and *Removed* for what is gone.
 
-## Unreleased
+## 1.5.0 — 2026-09-30
 
 ### New
 
