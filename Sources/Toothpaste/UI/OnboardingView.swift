@@ -103,7 +103,7 @@ struct OnboardingView: View {
                 bullet("Esc cancels, mid-typing as well.")
             }
 
-            Text("Nothing you copy is written to disk. Pin an item to keep it across restarts.")
+            Text("Nothing unpinned is written to disk. Pin an item to keep it across restarts; it is then saved as plain text, unless your password manager marked it as secret — and not every one does.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

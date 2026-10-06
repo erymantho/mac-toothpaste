@@ -87,7 +87,7 @@ private struct GeneralTab: View {
             // which cannot mark anything, and found it masked almost nothing. That second
             // case is why the caption also says which extension copies are recognised.
             Toggle("Show secrets from password managers as dots", isOn: $settings.maskConcealed)
-            Text("The app you copy from marks what is secret, and apps differ — some mark usernames too, some nothing at all. Browsers give extensions no way to mark a copy, so Toothpaste also counts a copy from a password manager's extension as secret by where it came from: from its toolbar popup, not from its menu inside a web page, in Chrome, Brave and likely other Chromium browsers. Safari and Firefox do not say which extension copied. Off, secrets are shown in full, on screen, to anyone looking at it. They are never written to disk either way.")
+            Text("The app you copy from marks what is secret, and apps differ — some mark usernames too, some nothing at all. Browsers give extensions no way to mark a copy, so Toothpaste also counts a copy from a password manager's extension as secret by where it came from: from its toolbar popup, not from its menu inside a web page. That was measured in Brave, and should hold in Chrome and other Chromium browsers. Safari and Firefox do not say which extension copied. Off, secrets are shown in full, on screen, to anyone looking at it. They are never written to disk either way.")
                 .font(.caption).foregroundStyle(.secondary)
 
             Picker("Appearance", selection: $settings.appearance) {
