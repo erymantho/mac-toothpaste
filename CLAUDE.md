@@ -148,7 +148,7 @@ make build     # debug build (swift build)
 make app       # release build + assemble Toothpaste.app + codesign
 make run       # alias for install — never run dist/ directly, see gotcha 2b
 make install   # copy the signed app to ~/Applications and run it from there
-               # THIS is the copy that holds the Accessibility grant
+               # the copy to run; the grant covers dist/ too (gotcha 2b)
 make reset-permission   # clear a stuck Accessibility grant for our bundle id
 make verify    # regression-check the clipboard capture path (also runs verify-watcher)
 make verify-watcher     # capture and secret rules, on a private pasteboard

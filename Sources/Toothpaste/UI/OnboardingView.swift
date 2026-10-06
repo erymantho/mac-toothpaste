@@ -5,8 +5,8 @@ import SwiftUI
 /// This exists because the failure is silent. Without the grant `CGEvent.post` returns
 /// no error and simply types nothing, so the app looks broken rather than unpermitted.
 /// Everything here is aimed at the three things that actually go wrong: not knowing it
-/// is needed, granting it to the wrong copy of the app, and not noticing that a grant
-/// from an earlier build has gone stale.
+/// is needed, running a copy other than the installed one, and not noticing that the
+/// entry in System Settings belongs to an earlier, differently signed build.
 struct OnboardingView: View {
     @ObservedObject var accessibility: Accessibility
     var onDone: () -> Void
@@ -48,7 +48,8 @@ struct OnboardingView: View {
             }
 
             step(2, "Switch on Toothpaste in the list") {
-                // The grant is tied to one bundle, so it matters which copy is listed.
+                // The grant follows the signature, so any copy is covered; the path is
+                // shown so a build copy can be told apart from the installed one.
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 6) {
                         Text(Accessibility.bundleLocation)

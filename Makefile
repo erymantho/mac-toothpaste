@@ -13,8 +13,9 @@ app:
 	./scripts/bundle.sh
 
 # `run` is deliberately an alias for `install`. Running dist/ directly means a second
-# copy without the Accessibility grant, and working out which one is live wastes more
-# time than the install ever saves.
+# copy, at a path `make app` deletes on every build, and working out which one is live
+# wastes more time than the install ever saves. (Both hold the Accessibility grant: it
+# follows the signature, not the path.)
 run: install
 
 # One-time setup on a new machine.
@@ -25,7 +26,8 @@ install: app
 	./scripts/install.sh
 
 # Clears a stuck Accessibility grant for our bundle id only. Needed when the app was
-# previously signed differently, or when the granted copy was deleted underneath TCC.
+# previously signed differently, so the entry in System Settings no longer matches it —
+# the usual sign is the switch showing on while the app still reports it missing.
 reset-permission:
 	pkill -x Toothpaste 2>/dev/null || true
 	tccutil reset Accessibility com.michaelsmith.toothpaste

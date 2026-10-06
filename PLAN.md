@@ -403,6 +403,11 @@ Then:
 
 ### Where the app runs from is not a detail — it decided the permission
 
+**Corrected the next day** — see *Correction: the grant follows the signature, not the
+path*, under Phase 4. Only the certificate was doing the work: deleting and recreating
+the bundle changes nothing. Installing to `~/Applications` stayed, for reasons that
+survive the correction. The reasoning as it stood that day follows.
+
 The Accessibility grant refused to stick for a long stretch, through a certificate
 fix and two `tccutil reset` cycles. The signature was never the remaining problem:
 `codesign --verify --strict` passed and the running binary satisfied its designated
@@ -459,9 +464,9 @@ previous app.
 Everything below needs a human, in roughly this order. Anything that fails here is a
 phase 1 bug, not phase 2 polish.
 
-**Accessibility is now granted and holding** (see the section above — the grant only
-stuck once the app was run from `~/Applications` instead of `dist/`). These are the
-tests that were waiting on it:
+**Accessibility is now granted and holding** (see the section above, which credited
+running from `~/Applications` instead of `dist/`; the certificate turned out to be what
+made it stick). These are the tests that were waiting on it:
 
 - [x] Paste into a plain Mac app end to end: ⌃⌥V → click a row → text appears
 - [x] Paste into an RDP session, and confirm the header flips to

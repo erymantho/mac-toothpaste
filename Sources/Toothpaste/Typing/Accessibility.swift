@@ -43,9 +43,9 @@ final class Accessibility: ObservableObject {
 
     /// Reveals the running app in Finder.
     ///
-    /// Worth having because the grant applies to *one* bundle. Building this project
-    /// leaves a second copy in `dist/`, and granting the permission to that one — which
-    /// every build deletes and recreates — is how an afternoon gets lost.
+    /// Worth having because it shows which copy is running. Building this project leaves
+    /// a second copy in `dist/`, which every build deletes and recreates; the grant covers
+    /// it too, since it follows the signature, but launch-at-login does not.
     static func revealInFinder() {
         NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
     }
