@@ -24,10 +24,11 @@ now only a password manager's own app could mark a copy as secret; browsers give
 extensions no way to, so a password copied from Bitwarden's extension in Brave or Chrome
 arrived as ordinary text — shown in full, and written to disk if you pinned it. Toothpaste
 now recognises copies from the extensions of more than forty password managers by where
-the browser says the copy came from. That works in Chrome and Brave, and should in other
-Chromium browsers. It covers copies made in the extension's toolbar popup — not one made
-from a password manager's menu inside a web page, which the browser credits to that web
-page — and not Safari or Firefox, which do not say which extension a copy came from.
+the browser says the copy came from. That was measured with Bitwarden's extension in
+Brave, and should work the same for the others, and in Chrome and other Chromium browsers.
+It covers copies made in the extension's toolbar popup — not one made from a password
+manager's menu inside a web page, which the browser credits to that web page — and not
+Safari or Firefox, which do not say which extension a copy came from.
 
 ### Changed
 

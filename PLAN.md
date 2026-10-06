@@ -893,8 +893,9 @@ store named beside it.
   extension; and Bitwarden's Safari extension bypasses WebKit and writes bare text through
   its app, indistinguishable from `pbcopy`;
 - Firefox, which writes no source type, and whose extension hosts are random per profile.
-- And in Chromium browsers other than Chrome and Brave, it should work but was not
-  measured: each can change the value through its own embedder hook.
+- And in Chrome itself and every other Chromium browser, it follows from Chromium's
+  source but was measured only in Brave: each browser can change the value through its
+  own embedder hook.
 
 **Found on the way, and fixed with it.** A writer puts its types on the pasteboard one
 call at a time, and only the first — emptying the pasteboard — moves `changeCount`.
@@ -2116,4 +2117,5 @@ twice in Launchpad, and the project folder is Nextcloud-synced.
 
 Images or files in history · iCloud/sync · cross-platform · App Store ·
 clipboard *editing* · snippets/templates · encryption at rest (masking is visual
-only, and the README will say so).
+only, and the README says so, together with where pinned entries are stored in plain
+text).

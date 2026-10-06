@@ -74,20 +74,30 @@ Right-click 📝 for the menu, or the gear in the panel for settings.
 
 ## History is a session thing
 
-**Nothing you copy is written to disk.** Restart the app and the history is empty
-except for what you pinned. Pinning is how you say "this one should stick around".
-Items a password manager marks as secret show as dots and are never persisted, pinned
-or not. Verified against 1Password and Bitwarden. How much counts as secret is the password
+**Nothing unpinned is written to disk.** Restart the app and the history is empty
+except for what you pinned. Pinning is how you say "this one should stick around", and
+what you pin is saved as **plain text**: readable JSON in
+`~/Library/Application Support/com.michaelsmith.toothpaste/history.json`, not encrypted.
+
+Items a password manager marks as secret show as dots and are never written to disk,
+pinned or not. Verified against 1Password and Bitwarden. A pinned secret's pin is grey,
+because it lasts only until Toothpaste quits. How much counts as secret is the password
 manager's choice, not Toothpaste's: Bitwarden's app, for one, marks everything it copies,
 usernames included.
 
+The dots hide text on screen and nothing more; they are not encryption. *Show secrets from
+password managers as dots*, in Settings → General, switches them off, and secrets still
+stay off the disk.
+
 Browsers give their extensions no way to mark a copy, so a password copied from a password
 manager's *browser extension* is recognised by where it came from instead — for more than
-forty password managers, and for copies made in the extension's toolbar popup. That works
-in Chrome and Brave, and should in other Chromium browsers such as Edge, Arc and Vivaldi.
-It does not cover a copy made from a password manager's menu inside a web page, which the
-browser credits to that web page, nor Safari or Firefox, which do not say which extension
-a copy came from. Those show as ordinary text.
+forty password managers, and for copies made in the extension's toolbar popup. That was
+measured with Bitwarden's extension in Brave. The rest follows from Chromium's source, so
+it should work the same for the other password managers, and in Chrome and other Chromium
+browsers such as Edge, Arc and Vivaldi. It does not cover a copy made from a password
+manager's menu inside a web page, which the browser credits to that web page, nor Safari
+or Firefox, which do not say which extension a copy came from. Those show as ordinary
+text.
 
 To see what an app puts on the clipboard when it copies, run
 `swift scripts/inspect-pasteboard.swift` in your checkout and copy something within 90
