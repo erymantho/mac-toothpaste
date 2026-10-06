@@ -2,8 +2,9 @@ import AppKit
 import Carbon.HIToolbox
 
 // Layout and typing diagnostic. Started as a throwaway spike for PLAN.md section 3;
-// kept deliberately, because `--dump-map` is the only way to see what a given
-// keyboard layout can and cannot produce until the phase 3 settings UI absorbs it.
+// kept deliberately, because `--dump-map` shows which keys type each character of a
+// sample (keycode, modifiers, dead-key composition), where the Layout check in Settings
+// says only which characters cannot be typed.
 //
 // Answered so far, against Windows App / Devolutions RDM / Omnissa Horizon:
 //   - Unicode mode is useless over RDP. The clients read NSEvent.keyCode and ignore

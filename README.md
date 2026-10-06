@@ -5,7 +5,7 @@ instead of ⌘V, so it works where the normal paste path is blocked: RDP session
 VM consoles, browser-based terminals, and password fields.
 
 Inspired by [0xpaste](https://github.com/mypetcheetah/0xpaste) (Windows, Electron).
-Native Swift, no third-party dependencies, ~2.4 MB.
+Native Swift, no third-party dependencies, ~2.7 MB.
 
 <img src="docs/panel.png" width="360" alt="The Toothpaste panel: a pinned entry with an accent stripe, a password from a manager shown as dots, and recent clipboard entries.">
 
@@ -48,7 +48,8 @@ not quarantined and simply runs. Building also means the signing certificate is
 
 ## Using it
 
-Press **⌃⌥V**, or click 📝 in the menu bar.
+Press **⌃⌥V**, or click 📝 in the menu bar. ⌃⌥V is the default; Settings → General
+records another shortcut.
 
 1. **Pick an item.** The panel stays open and the item is *armed*.
 2. **Click the field you want it in.** Any window will do, including one inside a
@@ -70,7 +71,8 @@ types. Letting go back over the panel cancels. This one clicks for you, so it is
 aiming — let go over a button and that button is what gets clicked. Switch it off in
 Settings → General and dragging an entry does nothing.
 
-Right-click 📝 for the menu, or the gear in the panel for settings.
+Right-click 📝 for the menu, or the gear in the panel for settings. *Appearance* there sets
+every window light or dark regardless of the system, if you would rather not follow it.
 
 ## History is a session thing
 
@@ -200,18 +202,20 @@ the entry is stale: `make reset-permission`, then `make install` and grant once.
 
 ## How it was built
 
-Written collaboratively with [Claude Code](https://claude.com/claude-code), over two
-days, by someone who had not written Swift before. That is worth stating plainly rather
-than leaving you to guess from the commit history.
+Written collaboratively with [Claude Code](https://claude.com/claude-code), by someone
+who had not written Swift before: the first working version in two days, and everything
+since in daily use. That is worth stating plainly rather than leaving you to guess from
+the commit history.
 
 It also explains [`PLAN.md`](PLAN.md), which is unusually detailed for a project this
 size: a development log of what was decided and why, including the approaches that were
 tried and failed. If you fork this and touch the typing engine, read section 3 first.
 It will save you the day it cost here.
 
-Everything in it was measured against real RDP sessions, real password managers and
-real hardware. Where a conclusion turned out to be wrong, the correction is in the log
-next to the original reasoning.
+Most of it was measured against real RDP sessions, real password managers and real
+hardware, and where a conclusion comes from reading source instead, the log says so.
+Where a conclusion turned out to be wrong, the correction is in the log next to the
+original reasoning.
 
 ## Licence
 

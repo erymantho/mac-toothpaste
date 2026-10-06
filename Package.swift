@@ -12,9 +12,10 @@ let package = Package(
             // it helps at this size. Revisit once the app has settled.
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
-        // Diagnostic tool, not part of the app. `typespike --dump-map --layout <id>`
-        // shows which characters a keyboard layout can produce; nothing in the UI
-        // exposes that yet.
+        // Diagnostic tool, not part of the app. `typespike --dump-map --layout <id> [text]`
+        // prints the keys that would type each character of a sample: keycode, modifiers,
+        // or the dead-key pair that composes it. Settings → Layout check only says which
+        // characters cannot be typed.
         .executableTarget(
             name: "typespike",
             path: "Sources/TypeSpike",

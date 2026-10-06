@@ -7,12 +7,13 @@ Native Swift, menu-bar only, MVP first then finetune.
 
 ## What this document is
 
-A development log, kept as the work happened, over two days in September 2026. It
-records decisions and the reasons behind them — including the approaches that were
-tried and failed, which is most of the value.
+A development log, kept as the work happened: two days of building in September 2026, then
+the releases that followed once other people were using it. It records decisions and the
+reasons behind them — including the approaches that were tried and failed, which is most
+of the value.
 
 **If you only want to work on the code, read `CLAUDE.md` instead.** It carries the
-eleven macOS pitfalls in a form you can act on. This file is for when you want to know
+macOS pitfalls in a form you can act on. This file is for when you want to know
 *why* something is the way it is, and what happens if you change it back.
 
 Some of it reads like a confession. That is deliberate. Several conclusions here were
@@ -23,33 +24,43 @@ space, a diagnosis credited to two changes when only one of them mattered. Those
 worth more than a clean narrative would be.
 
 Written collaboratively with [Claude Code](https://claude.com/claude-code): the
-measurements, the failures and the corrections are all real and were run against real
-RDP sessions, real password managers and real hardware.
+measurements, the failures and the corrections are all real. Most were run against real
+RDP sessions, real password managers and real hardware; where a conclusion comes from
+reading source or a header instead, the entry says so.
 
 ---
 
 > Checkbox key: `[x]` done · `[~]` deliberately dropped, with the reason · `[·]` part
 > of a phase that was parked, not an open task. A bare `[ ]` is genuinely outstanding.
 
-## Where this stands — end of 2026-09-08
+## Where this stands — 2026-10-06
 
-Built, working, in use. Phases 0, 1 and 3 are done; phase 2 (styling) and phase 4 were
-dropped or deferred by decision, not left undone by accident.
+Built, in daily use, and cloned by colleagues who build it themselves. Nine releases,
+1.0.0 to 1.5.0, between 2026-09-09 and 2026-09-30: `CHANGELOG.md` says what each one
+changed, and the dated entries below say why. Phases 0, 1 and 3 are done, and most of
+phase 4. Phase 2 (the 0xpaste look), the click-to-target overlay and password heuristics
+were dropped or deferred by decision, not left undone by accident.
 
 **Read this document for the *why*.** The code says what it does; what it cannot say is
 that Unicode typing was tried first and produced 53 letter `a`s over RDP, that
 modifier flags on the character event are not enough for an RDP client, or that
 `UCKeyTranslate`'s dead-key state hides its meaning in the low 16 bits. Those cost most
-of the day and are all recoverable only from here. Section 3 is the important one.
+of the first day and are all recoverable only from here. Section 3 is the important one.
 
-**The shape of the thing:** ⌃⌥V opens a panel; choosing an item arms it; the next click
-in any window is the destination; Esc cancels. Which keyboard layout to map against and
-how fast to type is a *profile*, chosen from the destination app, because local apps and
-remote sessions want opposite settings. Nothing unpinned is written to disk.
+**The shape of the thing:** ⌃⌥V, or a shortcut of your own, opens a panel; choosing an
+item arms it; the next click in any window is the destination; Esc cancels. Dragging an
+entry onto a field does both at once, which makes the app click as well as type, and is
+on by default. Which keyboard layout to map against and how fast to type is a *profile*,
+chosen from the destination app, because local apps and remote sessions want opposite
+settings. Nothing unpinned is written to disk, and nothing a password manager marks as
+secret is written at all. It asks the remote of the clone it was built from for new
+versions, its only network access, and pulls and rebuilds from it when asked to.
 
-**Known limitations, all deliberate:** the hotkey is fixed, there is no visual styling
-beyond plain and legible, and the layout a remote machine uses has to be told to us —
-no local code can discover it.
+**Known limitations, all deliberate:** the 0xpaste look was never built, and the layout a
+remote machine uses has to be told to us — no local code can discover it.
+
+**What is still open** is under *Raised, not yet decided* and *Deferred, deliberately*,
+near the end. A bare `[ ]` there is genuinely outstanding.
 
 **If you change the typing engine, run `make verify-layout` and `make verify-typing`,**
 then the diagnostic (`swift run typespike --dump-map --layout <id>`), and re-test
@@ -291,6 +302,11 @@ character. Moving the mouse aborts mid-type. History survives a restart.
 Everything else — the neon styling, settings, masking heuristics — is finetuning
 on top of that.
 
+**Since then:** met, and then changed on three points. Choosing an item arms it and the
+panel stays open for the click that picks the destination (see *Delivery model
+changed*); Esc cancels rather than the mouse (phase 1 acceptance); and only pinned
+entries survive a restart (see *Decisions taken 2026-09-08, after phase 3*).
+
 ---
 
 ## Phase 0 — Scaffold and build pipeline
@@ -380,7 +396,7 @@ Then:
 - [x] Verify against Windows App and RDM that reactivating the client leaves the
       remote-side caret where it was. If it does not, the phase 4 overlay moves here.
 
-### 1e. Minimal panel — **built, hotkey unverified**
+### 1e. Minimal panel — **built** (the hotkey verified by hand at acceptance)
 
 > The panel opens, renders and lists history (verified by capturing the window by
 > id). **Pressing ⌃⌥V could not be verified from here:** Carbon hotkeys are matched
@@ -448,6 +464,8 @@ just locally.
 
 Two things still outstanding, both listed under *Known unknowns*: Secure Input Mode,
 and whether a password manager's clipboard entry is recognised as concealed.
+**Both settled since:** Secure Input Mode does not block the typing (CLAUDE.md, gotcha
+10), and 1Password's and Bitwarden's marked copies are recognised as concealed.
 
 **A tooling mistake worth remembering.** `scripts/verify-capture.sh` used to `rm -f`
 the history file so it could assert on counts. That was harmless while the history
@@ -642,6 +660,8 @@ limit: the recent one and the pinned one survived, the other two went.
 passing it through to other apps is the awkward part — and the current binding
 conflicts with nothing. The settings window says it is not configurable rather than
 showing a control that does nothing.
+*Reversed the next day: a recorder inside our own window turned out to be the easy kind —
+see the hotkey recorder under Phase 3.*
 
 **Phase 2 styling stays parked.** Function over appearance, confirmed a second time
 now that the functionality is complete.
@@ -847,6 +867,32 @@ all sixteen maps confirmed, but nothing keeps them so.
   U.S. Windows layout has neither character on any key, so whatever arrives will be
   something else — the opposite of the profile's rule to report what cannot be typed
   rather than guess. Not measured over RDP.
+
+## What a survey of the open items changed — 2026-10-06
+
+Every item this file records as open was listed by two independent passes, one over the
+standing sections and one over the dated entries, and each item then checked twice — once
+against the newer entries, once against the code — by passes that tried to show it was
+closed. Of 77 candidates, about ten were genuinely open; the rest were settled,
+deliberately decided, or duplicates. The open ones are now under *Raised, not yet
+decided*, with a bare `[ ]`; two were there already but marked `[~]`, which the key
+reserves for what was dropped on purpose.
+
+Corrected in the documentation, not the app: the README said nothing you copy is
+written to disk, while pinned entries are, as plain JSON; the claim that the grant
+belongs to one copy survived in several places after its correction; the toolchain was
+named by its Swift version instead of its release; and the README, the changelog and this
+file said copies from a password manager's extension are recognised in Chrome, where
+only Bitwarden's popup in Brave was measured. The app's own texts that say the same go
+with the next app change.
+
+The repository on GitHub now refuses a force-push to `main` and any change to a pushed
+`v*` tag, which CLAUDE.md's release rules had asked for by discipline alone. `main` had
+been rewritten once, on 2026-09-15, before the updater existed; done now, it would fail
+every copy's `git pull --ff-only`.
+
+`scripts/bundle.sh` warns when the signing certificate is within sixty days of running
+out, since an in-app update runs it too.
 
 ## 1.5.0 — 2026-09-30
 
@@ -1906,7 +1952,7 @@ build here. The commit does.
 
 ## Raised, not yet decided
 
-- [~] **"Up to date" can be stale, and nothing says so.** The update check runs five
+- [ ] **"Up to date" can be stale, and nothing says so.** The update check runs five
       seconds after launch and, in the Updates tab, only when no check has run at all —
       the guard is `status == .idle`. Open settings on an app that has been running
       for a week and it reports the answer from a week ago, with no hint of its age. The
@@ -1922,7 +1968,7 @@ build here. The commit does.
       app had already reported "up to date" before the tag existed.
 
 
-- [~] **No way to read a long entry before sending it.** A detail strip was built for
+- [ ] **No way to read a long entry before sending it.** A detail strip was built for
       this on 2026-09-09 and **removed again on 2026-09-15**, after a few days of real
       use and once other people had started running the tool. Nothing replaced it.
 
@@ -1942,6 +1988,22 @@ build here. The commit does.
       Auto-scrolling the row was considered at the time and argued against: the job is
       to *verify* a command before it reaches a production machine, and scrolling text
       cannot be read at your own pace, scanned, or looked back at.
+
+- [ ] **The panel can be parked off-screen, and reopens there.** From *Dragging,
+      verified across displays — 2026-09-09*: `isUsable` accepts any 120×80 points of
+      overlap with a screen, so a panel dragged mostly off by accident is hard to find
+      again. Clamping on reopen would fix that, at the cost of no longer parking it half
+      off on purpose.
+
+- [ ] **A secret copied back from the panel can reach Universal Clipboard.** From
+      *Secrets copied from a browser extension — 2026-09-30*: the copy button keeps a
+      secret's `ConcealedType`, but does not write it `.currentHostOnly`, which is how
+      Chromium keeps its own secrets off the user's other devices.
+
+- [ ] **A shortcut that collides with another one is accepted without a word.** See the
+      correction under the hotkey recorder in Phase 3: `RegisterEventHotKey` does not
+      refuse a combination that another app or macOS itself already uses (measured), so
+      the "already taken" message is never shown for it.
 
 - [x] **Nothing automated checked typing.** `make verify` and `make verify-watcher`
       covered the clipboard side only, and the Shift bug fixed in 1.3.1 was reported by a
@@ -1966,6 +2028,12 @@ build here. The commit does.
       Accessibility has to be granted again, and what `codesign` does with an expired
       identity has not been tested. It has to be replaced before then; `scripts/bundle.sh`
       warns from sixty days ahead.
+
+- [ ] **Accessibility through MDM has not been explored.** From *Distribution: clone
+      and build* under Phase 4: a PPPC profile could pre-approve the permission on
+      managed Macs. That needs whoever manages them, who would also want to know that the
+      tool clicks as well as types and updates itself. Everyone signs with a certificate
+      of their own, so a profile keyed to the signature would need an entry per person.
 
 ## Deferred, deliberately — revisit later
 
@@ -1999,6 +2067,19 @@ item's right-click menu, or ⌘, once the window has focus.
         capital letter into a global shortcut and swallow it everywhere.
       - Registration can fail because another app holds the combination. The old
         shortcut is restored and the window says so, rather than leaving a dead key.
+
+        **Corrected 2026-10-06: it cannot, not this way.** Apple's header for
+        `RegisterEventHotKey` (CarbonEvents.h) says the same combination *can* be
+        registered by several applications, and measured with two processes holding
+        ⌃⌥⇧F13 at once, the second registration returned `noErr` in every order but one:
+        both asking for `kEventHotKeyExclusive`, which returned `eventHotKeyExistsErr`.
+        (The header's own note on that option promises the error when only the second
+        asks; measured, it does not come.) Combinations macOS uses itself — ⌃Space,
+        ⌥⌘Space, ⇧⌘3 while they were switched on — registered without complaint too,
+        with the option and without. Toothpaste registers without it, so the message is
+        never shown for the case it describes. What happens to the keypress then — both
+        apps told, or macOS first — needs a real finger, since Carbon hotkeys ignore
+        synthetic events, and was not tried.
       - The displayed key comes from the active layout via `UCKeyTranslate`, since
         which character a keycode produces is layout-dependent.
 
@@ -2015,7 +2096,8 @@ item's right-click menu, or ⌘, once the window has focus.
       events (see phase 1e).
 
       **Still unverified**: the "already taken by another app" path, which needs a
-      combination genuinely held by something else.
+      combination genuinely held by something else. (Moot as written: see the
+      correction above. Another app's combination does not make registration fail.)
 
 **Typing profiles** — the part the RDP work made necessary
 - [x] Add, remove, rename, reset to defaults; persisted as JSON in `UserDefaults`
@@ -2127,10 +2209,10 @@ Installing to `~/Applications` is still the right default, for reasons that surv
 launch-at-login registers a path that `make app` deletes, two registered copies appear
 twice in Launchpad, and the project folder is Nextcloud-synced.
 
-- [~] ~~Onboarding screen for the Accessibility grant, with a deep link to the right~~
-      System Settings pane
+- [x] ~~Onboarding screen for the Accessibility grant, with a deep link to the right~~
+      ~~System Settings pane~~ — built: *Onboarding for the Accessibility grant*, above
 - [x] README with screenshots
-- [x] **Distribution: clone and build** — settled 2026-09-09. Private repo at
+- [x] **Distribution: clone and build** — settled 2026-09-09. Public repo at
       `github.com/erymantho/mac-toothpaste`; colleagues clone, `make cert`,
       `make install`.
 
@@ -2184,21 +2266,35 @@ twice in Launchpad, and the project folder is Nextcloud-synced.
 
 ## 6. Known risks
 
+The list as it was written before phase 0, with what became of each.
+
 - **RDP scancode translation** (section 3). The biggest one, and the reason phase 1
   opens with a spike. Worst case, virtual-key mode is required and the dead-key
   handling we hoped to avoid comes back for remote targets.
+  *It came true, worst case and all: virtual keycodes, dead keys composed by hand.
+  Settled and verified over RDP — see section 3.*
 - **Local versus remote keyboard layout.** If the Mac is on a different layout than
   the remote Windows machine, characters arrive wrong in virtual-key mode. Not
   fixable from our side; the workaround is matching the layouts.
+  *Still stands. Each profile maps against a layout you choose, and the Layout check
+  shows what that layout cannot type.*
 - **Secure Input Mode.** When a password field has focus, or Terminal has Secure
   Keyboard Entry on, macOS may drop synthetic events. Unknown until tested; if it
   bites, it is a documented limitation, not something to engineer around.
+  *Tested: it does not block us, in native password fields or in Terminal (CLAUDE.md,
+  gotcha 10).*
 - **Fast typing gets dropped** by some apps that do not drain their event queue
   quickly. That is exactly why the speed setting exists — the "slow" preset is the
   escape hatch, not a nicety.
+  *There is no preset: each profile has its own initial, per-character and
+  around-modifier delays, as number fields.*
 - **TCC grant churn** during development, unless the self-signed cert is in place.
+  *Solved by the certificate alone — the grant follows the signature, not the path.*
 - **SwiftPM without Xcode** is the one unproven part of the toolchain. Phase 0
   exists specifically to prove it before anything is built on top.
+  *Proven in phase 0, and it has built every version since. Its one break was a
+  without-Xcode problem after all: a Command Line Tools SDK that needs a plugin only
+  full Xcode ships, worked around by `scripts/select-sdk.sh` — see 1.1.0.*
 
 ## 7. Non-goals
 

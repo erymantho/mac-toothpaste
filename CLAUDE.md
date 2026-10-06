@@ -12,7 +12,7 @@ This is a native rewrite, not a port — see *Divergences from 0xpaste* below.
 
 **Working and in daily use.** Capture, the panel, keystroke delivery into both local
 apps and RDP sessions, typing profiles, a settings window and in-app updating are all
-built and verified. Roughly 4,500 lines of Swift, a 2.4 MB app.
+built and verified. Roughly 5,100 lines of Swift, a 2.7 MB app.
 
 **`PLAN.md` is the source of truth** for what was decided and why — it carries the
 measurements behind the typing engine, which are not guessable from the code. Keep it
@@ -172,9 +172,12 @@ make appearances        # render every window under Automatic/Light/Dark, offscr
 make clean     # remove .build/ and dist/
 ```
 
-`make verify` drives the running app with `pbcopy` and asserts against the
-`history.json` it writes — no permissions, no UI, no window focus needed. It saves
-and restores the real clipboard. Extend it when the store gains behaviour.
+`make verify` drives the app in `~/Applications` with `pbcopy` and asserts against the
+`history.json` it writes — no permissions, no UI, no window focus needed. It checks the
+installed copy, not the one `make app` just built, so `make install` first to test a
+change. It quits and reopens the app, which costs the session's unpinned history, and it
+sets `history.json` and the clipboard's text aside and puts them back. Extend it when the
+store gains behaviour.
 
 `make verify-watcher` is the other half, and the one that can see a secret: it compiles
 `ClipboardWatcher` on its own and drives it against a private pasteboard with a unique
