@@ -35,8 +35,8 @@ reading source or a header instead, the entry says so.
 
 ## Where this stands — 2026-10-06
 
-Built, in daily use, and cloned by colleagues who build it themselves. Nine releases,
-1.0.0 to 1.5.0, between 2026-09-09 and 2026-09-30: `CHANGELOG.md` says what each one
+Built, in daily use, and cloned by colleagues who build it themselves. Ten releases,
+1.0.0 to 1.6.0, between 2026-09-09 and 2026-10-06: `CHANGELOG.md` says what each one
 changed, and the dated entries below say why. Phases 0, 1 and 3 are done, and most of
 phase 4. Phase 2 (the 0xpaste look), the click-to-target overlay and password heuristics
 were dropped or deferred by decision, not left undone by accident.
@@ -811,6 +811,19 @@ place". The hover detail strip had one.
   Worth noticing for the distribution model: "clone and build" means a toolchain update
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
+
+## 1.6.0 — 2026-10-06
+
+A minor release, by the rule: it adds the time of the last update check and changes the
+check itself, which now runs every six hours while the app runs. The rest are fixes,
+detailed in the entry below: search with Option and with dead keys, a Windows line ending
+typed as Return, the recorded shortcut shown where ⌃⌥V had been written in, Show panel on
+an open panel, untypeable characters kept out of the log, and texts that said more than
+the app does. What could be tried by hand was, before the release — which is how the
+dead keys came to need a third attempt; the six-hourly check, which a hand test cannot
+wait for, was measured against the real `Updater` with a scratch remote that could stall
+or fail. The annotation again repeats what earlier releases added, for copies still on
+1.2.x, and corrects what 1.5.0's notes said about Chrome.
 
 ## Found by the survey, fixed in the app — 2026-10-06
 
