@@ -26,8 +26,13 @@ struct KeyboardLayout {
 
     /// Characters in `text` this layout cannot produce at all.
     func unproducible(in text: String) -> [Character] {
-        text.filter { $0 != "\n" && strokes[$0] == nil }
+        text.filter { !Self.lineBreaks.contains($0) && strokes[$0] == nil }
     }
+
+    /// Typed as the Return key rather than looked up. Swift reads a Windows line ending as
+    /// one `Character`, `"\r\n"`, which is not equal to `"\n"` — so testing for `"\n"` alone
+    /// dropped every line break in text copied from Windows.
+    static let lineBreaks: Set<Character> = ["\n", "\r\n", "\r"]
 
     // MARK: - Building
 

@@ -71,7 +71,7 @@ final class TypingEngine: ObservableObject {
                 break
             }
 
-            if character == "\n" {
+            if KeyboardLayout.lineBreaks.contains(character) {
                 // Newlines need a real Return; a unicode payload does not reliably
                 // produce one.
                 await press(CGKeyCode(kVK_Return), flags: [], source: source, profile: profile)

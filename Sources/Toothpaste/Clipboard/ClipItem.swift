@@ -22,10 +22,12 @@ struct ClipItem: Identifiable, Codable, Equatable {
     var characterCount: Int { text.count }
 
     /// Single-line form for list rows; the stored text keeps its newlines.
+    ///
+    /// Every kind of line break becomes a space. A Windows line ending is one `Character`,
+    /// `"\r\n"`, and replacing `"\n"` alone left its `\r`, where the one-line row then
+    /// stopped: a two-line snippet showed only its first line.
     var preview: String {
-        text
-            .replacingOccurrences(of: "\n", with: " ")
-            .replacingOccurrences(of: "\t", with: " ")
+        String(text.map { $0.isNewline || $0 == "\t" ? " " : $0 })
             .trimmingCharacters(in: .whitespaces)
     }
 }

@@ -71,9 +71,15 @@ struct VerifyTyping {
                 && (!event.flags.contains(.maskAlternate) || event.flags.rawValue & 0x20 != 0)
         }, "no event says Shift or Option without saying which")
 
-        // A newline is the Return key, not a character: gotcha 5.
+        // A newline is the Return key, not a character: gotcha 5. Windows ends a line with
+        // \r\n, which Swift reads as one Character that is not equal to "\n".
         let lines = await typed("a\nb", .windowsRemote, layout: "com.apple.keylayout.US")
         check(render(lines) == "0↓0x0 0↑0x0 36↓0x0 36↑0x0 11↓0x0 11↑0x0", "a newline is typed as Return")
+        for profile in [TargetProfile.windowsRemote, .local] {
+            let windows = await typed("a\r\nb", profile, layout: "com.apple.keylayout.US")
+            check(render(windows) == "0↓0x0 0↑0x0 36↓0x0 36↑0x0 11↓0x0 11↑0x0",
+                  "a Windows line ending is typed as Return too, with \(profile.name)")
+        }
 
         print(failures == 0 ? "\nall passed" : "\n\(failures) failed")
         exit(failures == 0 ? 0 : 1)
