@@ -1960,6 +1960,13 @@ build here. The commit does.
       `make verify-layout`, same entry. One test in a real session would settle what
       arrives.
 
+- [ ] **The developer's signing certificate expires on 2027-09-08.** It was made with
+      Keychain Access's one-year default, before `make cert` existed; certificates from
+      `make cert` last ten years. A new one changes the designated requirement, so
+      Accessibility has to be granted again, and what `codesign` does with an expired
+      identity has not been tested. It has to be replaced before then; `scripts/bundle.sh`
+      warns from sixty days ahead.
+
 ## Deferred, deliberately — revisit later
 
 - ~~**`clear all` has no confirmation and takes pinned items with it.**~~ Resolved: it

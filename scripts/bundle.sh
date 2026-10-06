@@ -73,6 +73,18 @@ if [ -n "$HASH" ]; then
 	fi
 	codesign --force --sign "$HASH" "$APP"
 	echo "signed: $SIGN_IDENTITY ($HASH)"
+
+	# A certificate that runs out stops more than this build: an in-app update runs this
+	# script too. Say so while there is time to make a new one. Those from `make cert` last
+	# ten years; one made in Keychain Access lasts one.
+	PEM="$(security find-certificate -a -c "$SIGN_IDENTITY" -Z -p 2>/dev/null \
+		| awk -v hash="$HASH" '/^SHA-1 hash:/ { keep = ($3 == hash) } keep' || true)"
+	if [ -n "$PEM" ] && ! printf '%s\n' "$PEM" | openssl x509 -noout -checkend $((60 * 86400)) >/dev/null 2>&1; then
+		echo "WARNING: the certificate '$SIGN_IDENTITY' runs out on"
+		echo "         $(printf '%s\n' "$PEM" | openssl x509 -noout -enddate | cut -d= -f2)."
+		echo "         Delete it in Keychain Access, run make cert, then make install and"
+		echo "         grant Accessibility once more: the new one is a different signature."
+	fi
 else
 	codesign --force --sign - "$APP"
 	echo "WARNING: no certificate named '$SIGN_IDENTITY' — signed ad-hoc."
