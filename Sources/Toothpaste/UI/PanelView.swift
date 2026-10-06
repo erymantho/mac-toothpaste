@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Phase 1e: functional, deliberately plain. Styling is deferred by decision.
@@ -87,7 +88,17 @@ struct PanelView: View {
             query = ""
         }
         .onKeyPress { press in
-            guard let scalar = press.characters.unicodeScalars.first else { return .ignored }
+            // What the key typed, read from the event itself. `press.characters` is the key
+            // as if no modifier but Shift applied: ⌥⇧2 arrives there as "@", not "€", and
+            // a dead key as its bare accent. The event has the character the layout made,
+            // nothing for a dead key, and the composed one on the key that completes it.
+            let typed = NSApp.currentEvent.flatMap { $0.type == .keyDown ? $0.characters : nil }
+                ?? press.characters
+            guard let scalar = typed.unicodeScalars.first else {
+                // A dead key, waiting for the key that completes it: nothing to add yet,
+                // and nothing to beep about.
+                return press.modifiers.isDisjoint(with: [.command, .control]) ? .handled : .ignored
+            }
 
             // Backspace is handled here rather than through
             // `.onKeyPress(keys: [.delete])`, which never fires: the key arrives at this
@@ -103,10 +114,14 @@ struct PanelView: View {
 
             // Otherwise only characters someone could be typing: control codes sit below
             // 0x20, arrow and function keys in the private-use range from 0xF700.
-            guard press.modifiers.isDisjoint(with: [.command, .control, .option]),
+            //
+            // Option is not a shortcut here but how characters are typed: € on most Mac
+            // layouts, and \, | or brackets on German, French, Belgian and Swiss ones.
+            // Refusing it made those unsearchable.
+            guard press.modifiers.isDisjoint(with: [.command, .control]),
                   scalar.value >= 0x20, scalar.value < 0xF700
             else { return .ignored }
-            query.append(contentsOf: press.characters)
+            query.append(contentsOf: typed)
             return .handled
         }
         .onKeyPress(.escape) {
