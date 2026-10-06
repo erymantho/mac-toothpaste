@@ -1,6 +1,6 @@
 APP := dist/Toothpaste.app
 
-.PHONY: build app run cert install reset-permission verify verify-watcher appearances clean
+.PHONY: build app run cert install reset-permission verify verify-watcher verify-layout verify-typing appearances clean
 
 # See scripts/select-sdk.sh: Command Line Tools 27 ships an SDK it cannot fully build
 # against. Expands to nothing when the toolchain is healthy.
@@ -34,13 +34,25 @@ reset-permission:
 	defaults delete com.michaelsmith.toothpaste panelOrigin 2>/dev/null || true
 	@echo "Permission cleared. Run 'make install', then grant when prompted."
 
-verify: app verify-watcher
+verify: app verify-watcher verify-layout verify-typing
 	./scripts/verify-capture.sh
 
 # What the clipboard watcher captures and what it counts as secret, against a private
 # pasteboard. Unlike verify-capture.sh it touches nothing of yours, so it can run any time.
 verify-watcher:
 	./scripts/verify-watcher.sh
+
+# The character → keystroke map typing depends on, for eight layouts every Mac has, against
+# scripts/verify-layout.golden and the rules in gotcha 4. It posts no event, and this Mac's
+# own layout and keyboard play no part. After a deliberate change, or a macOS update that
+# changed a layout: scripts/verify-layout.sh --update, then read the git diff.
+verify-layout:
+	./scripts/verify-layout.sh
+
+# What the typing engine would post — keys, order, flags — with every event recorded
+# instead of posted. Gotchas 4 and 5, checked without a remote session or a permission.
+verify-typing:
+	./scripts/verify-typing.sh
 
 # Both palettes, side by side, without switching the machine over. Writes PNGs to
 # dist/appearances and never puts a window on screen.

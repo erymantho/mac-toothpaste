@@ -51,9 +51,10 @@ remote sessions want opposite settings. Nothing unpinned is written to disk.
 beyond plain and legible, and the layout a remote machine uses has to be told to us —
 no local code can discover it.
 
-**If you change the typing engine, run the diagnostic** (`swift run typespike
---dump-map --layout <id>`) and re-test against a real RDP session. The unit of truth
-here is what arrives on the far end, and nothing in the build catches that.
+**If you change the typing engine, run `make verify-layout` and `make verify-typing`,**
+then the diagnostic (`swift run typespike --dump-map --layout <id>`), and re-test
+against a real RDP session. The two checks catch a map or an event that changed; the unit
+of truth is still what arrives on the far end, and only a real session shows that.
 
 ---
 
@@ -790,6 +791,62 @@ place". The hover detail strip had one.
   Worth noticing for the distribution model: "clone and build" means a toolchain update
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
+
+## Typing gets checks of its own — 2026-10-06
+
+Until now nothing automated looked at the typing side. `make verify` and `make
+verify-watcher` cover the clipboard, and the Shift bug fixed in 1.3.1 was reported by a
+person. Two checks now do, in the style of `verify-watcher`: they compile the app's own
+sources against a harness, and they post nothing.
+
+**`make verify-layout`** builds `KeyboardLayout` for eight layouts that ship with macOS —
+U.S., which the RDP profile maps against; U.S. International – PC, for its dead keys;
+ABC, British, German, Swiss German, French and Belgian, for what they put on Option. It
+looks each up by ID, enabled or not, so this Mac's own layout plays no part, and pins the
+keyboard type to ANSI: measured, the 65 JIS keyboard types of 256 give other maps for
+U.S., ABC and U.S. International – PC, and every ANSI and ISO type the same one. It then
+checks two things. The rules from gotcha 4, which hold whatever Apple does to a layout:
+every stroke replayed through `UCKeyTranslate` types its character and leaves no dead key
+pending, no dead key is completed by a modifier key, no stroke uses the keypad, the
+fewest modifiers win. And `scripts/verify-layout.golden`, which records what each map
+makes of 172 characters, so a change says exactly which character's keys moved. The
+golden file also records each layout's size and a fingerprint of its bytes, which tells
+a macOS update that changed a layout apart from a change in the code.
+
+**`make verify-typing`** compiles `TypingEngine` with a `CGEvent` class of its own, which
+shadows CoreGraphics' one inside that module and records each event instead of posting
+it. It checks what gotcha 4 is about: Shift and Option pressed as key events, the
+left/right bits beside them on every event while they are down, release in reverse
+order, and Return for a newline. The script reads the binary's undefined symbols first
+and refuses to run it if `CGEventPost` or `CGEventCreateKeyboardEvent` is among them, so
+a change that defeated the replacement fails there instead of typing into whatever has
+focus.
+
+**Tested against deliberate bugs.** Nine broken copies of `KeyboardLayout`: the dead-key
+test as `state == 0`, no dead-key check at all (the bug section 3 describes shipping), a
+modifier key completing a dead key, the keypad allowed, two changes of modifier order,
+Option allowed where it is forbidden, any key completing a dead key, and only enabled
+layouts read. All nine fail, each with the rule or the lines named. Two broken copies of
+`TypingEngine` fail too: one without the left/right bits — the 1.3.1 bug — and one that
+sets flags on the character event without pressing Shift as a key — the bug that made
+`Hello` arrive as `hello` over RDP. Each check runs in under two seconds.
+
+**What they cannot see.** What arrives on the far side of an RDP session, which still
+takes a real one; JIS keyboards; and, in the golden file, maps other than the default
+profiles' (the rules cover all sixteen). And `typespike --dump-map` still builds its map
+with its own copy of the builder: the two agree today, which a diff of their output for
+all sixteen maps confirmed, but nothing keeps them so.
+
+**Found by them, not fixed here** — both are app changes:
+- A Windows line ending is not typed as Return. Swift reads `\r\n` as a single
+  `Character`, which is not equal to `"\n"`, so the engine's newline test misses it:
+  the RDP profile reports the line break as a character it cannot type and drops it,
+  and the Mac profile sends it as a Unicode event on virtual key 0. Measured through the
+  recording harness.
+- The RDP profile maps § and ± to keycode 10, the key left of 1 on an ISO keyboard. A
+  U.S. Windows layout has neither character on any key, so whatever arrives will be
+  something else — the opposite of the profile's rule to report what cannot be typed
+  rather than guess. Not measured over RDP.
 
 ## 1.5.0 — 2026-09-30
 
@@ -1885,6 +1942,23 @@ build here. The commit does.
       Auto-scrolling the row was considered at the time and argued against: the job is
       to *verify* a command before it reaches a production machine, and scrolling text
       cannot be read at your own pace, scanned, or looked back at.
+
+- [x] **Nothing automated checked typing.** `make verify` and `make verify-watcher`
+      covered the clipboard side only, and the Shift bug fixed in 1.3.1 was reported by a
+      person, not caught by a check. Since 2026-10-06 `make verify-layout` checks the map
+      and `make verify-typing` the events — see *Typing gets checks of its own*. What
+      arrives over RDP still takes a real session.
+
+- [ ] **`typespike --dump-map` keeps its own copy of the map builder**, in
+      `Sources/TypeSpike`, kept in step with `KeyboardLayout` by hand. The two agreed on
+      2026-10-06 for all sixteen maps the layout check builds; nothing keeps them so.
+
+- [ ] **A Windows line ending is not typed as Return.** Found by `make verify-typing`;
+      see *Typing gets checks of its own — 2026-10-06*.
+
+- [ ] **§ and ± over RDP go to a key a U.S. Windows layout does not have.** Found by
+      `make verify-layout`, same entry. One test in a real session would settle what
+      arrives.
 
 ## Deferred, deliberately — revisit later
 

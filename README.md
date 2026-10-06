@@ -178,7 +178,14 @@ which one you are running, and the commit it was built from.
 make cert              # one-time: create the signing certificate
 make install           # build, install to ~/Applications, run from there
 make run               # alias for install
-make verify            # regression-check capture and persistence
+make verify            # the three checks below, then capture and persistence on the copy
+                       # in ~/Applications (make install first to check a change). It
+                       # quits and reopens the app, so unpinned history is lost, and
+                       # uses your real clipboard; its text and history.json are put back
+make verify-watcher    # the capture and secret rules, on a private pasteboard;
+                       # touches nothing of yours, safe to run any time
+make verify-layout     # the character → keystroke map, for eight layouts
+make verify-typing     # the keys and flags the engine would post; posts none
 make appearances       # render every window in light and dark, to dist/appearances
 make reset-permission  # clear a stuck Accessibility grant for this bundle id
 make clean             # remove .build/ and dist/

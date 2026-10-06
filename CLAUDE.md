@@ -163,8 +163,10 @@ make run       # alias for install — never run dist/ directly, see gotcha 2b
 make install   # copy the signed app to ~/Applications and run it from there
                # the copy to run; the grant covers dist/ too (gotcha 2b)
 make reset-permission   # clear a stuck Accessibility grant for our bundle id
-make verify    # regression-check the clipboard capture path (also runs verify-watcher)
+make verify    # regression-check the clipboard capture path (also runs the three below)
 make verify-watcher     # capture and secret rules, on a private pasteboard
+make verify-layout      # the keyboard map for eight layouts, against a golden file
+make verify-typing      # what the typing engine would post, recorded instead of posted
 make appearances        # render every window under Automatic/Light/Dark, offscreen,
                         # to dist/appearances — see gotcha 13
 make clean     # remove .build/ and dist/
@@ -184,6 +186,19 @@ which is what makes those cases fail if the 50 ms wait is ever removed. Extend i
 watcher gains a rule. One guard has no case: the second `changeCount` check, after the
 reads, covers a write landing within microseconds of them, which only a doctored
 pasteboard could produce.
+
+`make verify-layout` and `make verify-typing` are the typing side, and like
+`verify-watcher` they touch nothing: no event is posted and no permission is needed. The
+first builds `KeyboardLayout` for eight layouts every Mac has — looked up by ID, enabled or
+not, with the keyboard type pinned to ANSI so the last keyboard used plays no part — and
+checks the rules in gotcha 4 plus `scripts/verify-layout.golden`, which says exactly which
+character's keys moved. A macOS update can change Apple's layouts; the report says whether
+a layout's own bytes changed, and `scripts/verify-layout.sh --update` records the new map
+once the diff has been read. The second compiles `TypingEngine` with a `CGEvent` of its own
+that records instead of posting, and checks the order and flags of what would be sent —
+modifier keys as key events, the left/right bits beside them, Return for a newline. The
+script refuses to run a binary that links `CGEventPost`. Neither can say what arrives on
+the far side of an RDP session; that still takes a real one.
 
 `make app` produces `dist/Toothpaste.app`. It is an accessory app: menu bar icon,
 no Dock icon, no main window.
@@ -245,6 +260,8 @@ scripts/inspect-pasteboard.swift  dumps the types on the pasteboard, and where a
 scripts/install.sh            copies it to ~/Applications and runs it from there
 scripts/verify-capture.sh     regression check for capture and persistence
 scripts/verify-watcher.sh/.swift  the watcher's rules, on a private pasteboard
+scripts/verify-layout.sh/.swift/.golden  the keyboard map for eight layouts
+scripts/verify-typing.sh/.swift  the events the engine would post, recorded instead
 scripts/render-appearances.sh both palettes without switching the machine over
 scripts/render-appearances.swift  the renderer it compiles against the real sources
 scripts/update.sh             pulls and reinstalls after the app it replaces has quit
