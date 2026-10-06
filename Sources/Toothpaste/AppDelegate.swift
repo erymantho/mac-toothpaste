@@ -261,8 +261,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Swaps the global shortcut. Returns a message when it could not be taken, so the
     /// settings window can say so instead of leaving a dead shortcut behind.
     private func changeHotkey(to combo: KeyCombo) -> String? {
-        // Release the old registration first: Carbon will not hand out a combination
-        // that is still held, not even by us.
+        // Release the old registration first: Carbon refuses a combination this process
+        // already holds. Another app holding it is no obstacle — measured, the call still
+        // succeeds, for macOS's own shortcuts too — so a refusal cannot name a culprit.
         hotkey = nil
 
         if let replacement = makeHotkey(combo) {
@@ -271,7 +272,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         hotkey = makeHotkey(settings.hotkey)
-        return "\(combo.description) is already taken by another app"
+        return "macOS would not register \(combo.description)"
     }
 
     // MARK: - Actions

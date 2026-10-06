@@ -57,7 +57,10 @@ final class Hotkey {
         let status = RegisterEventHotKey(
             keyCode, modifiers, hotKeyID, GetApplicationEventTarget(), 0, &ref
         )
-        guard status == noErr, let ref else { return nil }
+        guard status == noErr, let ref else {
+            NSLog("Toothpaste: RegisterEventHotKey(\(keyCode), \(modifiers)) returned \(status)")
+            return nil
+        }
 
         reference = ref
         hotkeyHandlers[identifier] = handler
