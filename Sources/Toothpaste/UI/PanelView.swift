@@ -488,7 +488,7 @@ struct PanelView: View {
         HStack {
             Text(":: \(filtered.count)/\(store.items.count) items")
             Spacer()
-            Text("⌃⌥V").padding(.trailing, 8)
+            Text(settings.hotkey.description).padding(.trailing, 8)
             Button(confirmingClear ? "sure?" : "clear") {
                 if confirmingClear {
                     store.clearUnpinned()

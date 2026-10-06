@@ -220,7 +220,7 @@ private final class Renderer: NSObject, NSApplicationDelegate {
     """
 
     private var onboarding: AnyView {
-        AnyView(OnboardingView(accessibility: accessibility, onDone: {}))
+        AnyView(OnboardingView(accessibility: accessibility, settings: settings, onDone: {}))
     }
 
     /// The window a failed update leaves behind. It is handed its failure directly, so

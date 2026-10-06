@@ -9,6 +9,8 @@ import SwiftUI
 /// entry in System Settings belongs to an earlier, differently signed build.
 struct OnboardingView: View {
     @ObservedObject var accessibility: Accessibility
+    /// For the shortcut, which is whatever was recorded rather than always the default.
+    @ObservedObject var settings: Settings
     var onDone: () -> Void
 
     private var granted: Bool { accessibility.isTrusted && !Accessibility.debugForceUngranted }
@@ -95,7 +97,7 @@ struct OnboardingView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("How it works").font(.callout.weight(.semibold))
-                bullet("Press ⌃⌥V, or click 📝 in the menu bar.")
+                bullet("Press \(settings.hotkey.description), or click 📝 in the menu bar.")
                 bullet("Pick an item — the panel stays open and the item is armed.")
                 bullet("Click the field you want it in. That click chooses the destination, so it works inside a remote session too.")
                 bullet("Esc cancels, mid-typing as well.")

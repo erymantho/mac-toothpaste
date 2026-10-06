@@ -55,7 +55,9 @@ struct KeyCombo: Equatable, Codable {
         kVK_LeftArrow: "←", kVK_RightArrow: "→", kVK_UpArrow: "↑", kVK_DownArrow: "↓",
         kVK_F1: "F1", kVK_F2: "F2", kVK_F3: "F3", kVK_F4: "F4", kVK_F5: "F5",
         kVK_F6: "F6", kVK_F7: "F7", kVK_F8: "F8", kVK_F9: "F9", kVK_F10: "F10",
-        kVK_F11: "F11", kVK_F12: "F12",
+        kVK_F11: "F11", kVK_F12: "F12", kVK_F13: "F13", kVK_F14: "F14", kVK_F15: "F15",
+        kVK_F16: "F16", kVK_F17: "F17", kVK_F18: "F18", kVK_F19: "F19", kVK_F20: "F20",
+        kVK_Help: "Help", kVK_ANSI_KeypadEnter: "⌤", kVK_ANSI_KeypadClear: "⌧",
     ]
 
     static func name(for keyCode: UInt32) -> String {
@@ -78,7 +80,13 @@ struct KeyCombo: Equatable, Codable {
                 &deadKeyState, 4, &length, &chars
             )
             guard status == noErr, length > 0 else { return }
-            result = String(utf16CodeUnits: chars, count: length).uppercased()
+            // A key that types nothing visible translates to a control code, which would
+            // show as nothing at all: F13 to F16 did, and keys without a name here still
+            // would. "key 110" says more than an empty space after ⌃⌥.
+            let typed = String(utf16CodeUnits: chars, count: length)
+            guard !typed.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F })
+            else { return }
+            result = typed.uppercased()
         }
         return result
     }

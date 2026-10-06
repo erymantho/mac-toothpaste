@@ -94,7 +94,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ) { [weak self] in
             guard let self else { return AnyView(EmptyView()) }
             return AnyView(
-                OnboardingView(accessibility: self.accessibility) { [weak self] in
+                OnboardingView(accessibility: self.accessibility, settings: self.settings) { [weak self] in
                     self?.onboardingWindow?.close()
                 }
             )
