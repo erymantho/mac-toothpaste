@@ -42,8 +42,8 @@ final class PanelController {
     var onWillShow: (() -> Void)?
     var onHide: (() -> Void)?
 
-    /// What a click in another application means. Normally "dismiss"; while an item is
-    /// armed it means "this is the destination", so the owner replaces it.
+    /// What a click in another application means. Normally nothing — the panel stays
+    /// put; while an item is armed it is the destination, so the owner sets this then.
     var onOutsideClick: (() -> Void)?
 
     init(content: @escaping () -> AnyView) {
@@ -53,6 +53,15 @@ final class PanelController {
     func toggle() { isVisible ? hide() : show() }
 
     func show() {
+        // Already open, as when *Show panel* is chosen from the menu: only bring it
+        // forward. Opening it again cleared an armed item without a word, left the
+        // destination click wired to close the panel instead, and added a second
+        // outside-click monitor that `hide()` never removed.
+        if let panel, panel.isVisible {
+            panel.makeKeyAndOrderFront(nil)
+            return
+        }
+
         onWillShow?()
 
         let panel = panel ?? makePanel()
