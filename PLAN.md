@@ -812,6 +812,112 @@ place". The hover detail strip had one.
   can break every colleague at once, with no bad commit to point at. This is the first
   instance.
 
+## Found by the survey, fixed in the app — 2026-10-06
+
+Fixes for bugs found while the survey checked the open items against the code, and by
+the reviews of the changes that followed it; for the Windows line ending, which the
+typing checks below turned up; and the decision that had waited under *Raised, not yet
+decided* since 1.2.1. None of these had been reported by anyone. Each says how it was
+established, and all of it was built, not yet used: the owner's test comes before the
+release.
+
+**Search ignored every character typed with Option.** The key handler kept shortcuts out
+of the query by refusing any key with ⌘, ⌃ or ⌥ held. On a Mac keyboard Option is not a
+shortcut but how characters are typed. Measured with `UCKeyTranslate` on nine layouts —
+U.S., U.S. International – PC, ABC, Dutch, British, German, Swiss German, French and
+Belgian — € needs it on all nine, `\ | [ ] { }` on Belgian, French, German and Swiss
+German, @ on German and Swiss German. Across all 264 layouts on this Mac, fifteen type €
+without it.
+
+The first fix only dropped ⌥ from the refusal, and a review measured why that was not
+enough: SwiftUI's `KeyPress.characters` is the key as if no modifier but Shift applied —
+its own documentation says so, and an in-process probe confirmed it — so ⌥⇧2 arrived as
+`@`, not `€`. The handler now reads the characters from the key event being dispatched,
+`NSApp.currentEvent`, which has what the layout made: nothing for a dead key, and the
+composed character on the key after it. That also changes dead keys without Option, as
+U.S. International – PC has for `'` and `"`: the query got the bare accent and then the
+letter before. Whether the composed character arrives as it should was not measured,
+since the probe could only send events it had made itself; it is on the owner's test
+list, together with the one cost: a letter typed while ⌥ is still held from ⌃⌥V now
+comes in as ß or ®, where it was dropped.
+
+**A Windows line ending was not typed as Return.** Swift reads `\r\n` as a single
+`Character`, so the engine's test for `"\n"` missed it: over RDP the line break was
+reported as untypeable and dropped, and in Mac apps it went out as a Unicode event on
+virtual key 0. Measured through the recording harness below, not seen in use, and
+whether text copied in a Windows session even reaches the Mac clipboard with CR LF was
+not checked. `KeyboardLayout.lineBreaks` holds `\n`, `\r\n` and `\r`, and the engine and
+the Layout check both use it; `make verify-typing` has a case for each profile, and both
+fail against the code before this change. The row preview had the same blind spot — it
+replaced `"\n"` and left the `\r`, where the one-line row then stopped — and now turns
+every kind of line break into a space.
+
+**The skipped characters went to the system log.** Found by the review of the
+documentation changes. `flagIncomplete` logged the characters a layout could not type
+with `NSLog`, which macOS keeps on disk — from any entry, a secret's included, against the
+rule that nothing unpinned and no secret is written down. A test line was readable through
+`log show` seconds later; no Toothpaste line of that kind was in this Mac's last thirty
+days, so it was a possible leak, not one that happened. It logs only how many now. The menu
+bar warning still names them, except for a secret while secrets are shown as dots.
+
+**A recorded shortcut was shown as ⌃⌥V anyway**, in the panel's footer and the welcome
+window, which both had the default written into them; read from the code. Both read the
+setting now. And `KeyCombo` had no name for F13 to F20: `UCKeyTranslate` gives a control
+character for F13 to F16, which showed as nothing, and nothing at all for F17 to F20,
+which showed as *key 64* and the like. Help — Insert on a PC keyboard — and the keypad's
+Enter and Clear gave control characters too. Those have names now, and any key that still
+translates to a control character shows as *key N* rather than as an empty space.
+
+**Show panel, from the menu, on an open panel** ran `show()` again; read from the code. It
+cleared the armed entry without a word, left the click meant for the destination wired to
+close the panel, and installed a second outside-click monitor that `hide()` never
+removed. Showing a panel that is already showing now only brings it forward.
+
+**"Up to date" says when, and is asked again.** The question offered two ways out:
+re-check when the Updates tab opens if the last check is stale, or show when the check
+ran. It preferred the second, because the first adds a second trigger for network
+access, which 1.2.0 made deliberate. The second is taken. In place of the first comes
+something that goes further than the question wanted — a timed check, unattended —
+because a re-check when the tab opens still leaves the menu bar silent: a copy started at
+login on a Monday, with a version tagged on the Tuesday, showed no arrow until someone
+restarted it or opened Settings and pressed *Check now*, and the menu bar is the one place
+an update is announced (gotcha 17). It stays behind the same switch, it is the same `git
+fetch --tags` against the clone's own remote, and the switch is read every time.
+
+Every six hours by the clock. Not a six-hour timer: a timer counts only time the Mac is
+awake — the run loop keeps it in `mach_absolute_time`, which stops during sleep; reasoned
+from CoreFoundation's source, not measured — so one set at ten at night would fire around
+noon after a night asleep. A fifteen-minute tick compares clock times instead, and checks
+once six hours have passed since the last check began. A timed check shows nothing while it
+runs — no spinner, no arrow blinking out — and when it fails the previous answer stands: a
+laptop offline for an afternoon has not stopped being up to date. Checks never overlap,
+since two `git fetch`es in one repository compete for its lock files, and *Update and
+restart* waits for a timed check still running, which would otherwise race the update's
+own `git pull`. A review measured the interleavings against the real `Updater`, with a
+scratch remote that could be made to stall or fail: a check someone is waiting for always
+resolves, within the fetch's 25-second limit even when the remote never answers, and its
+failure is always shown.
+
+**The hotkey message, and what was not built.** A refused registration now says *macOS
+would not register ⌃⌥X* and logs the status, instead of blaming another app — which, as
+measured, never makes it fail. In practice the message cannot appear: the only refusal
+left is a duplicate inside this process, which changing the shortcut rules out. Detecting
+a clash was looked into and not built. `CopySymbolicHotKeys` lists macOS's own shortcuts —
+234 entries on macOS 27.0.1, 171 switched on — in Carbon's modifier bits, plus bit
+0x20000, which macOS sets by itself on all sixty F-key and arrow entries and which is a
+real fn/Globe modifier on fifty others (fn-C, ⌃fn-F), so it can be ignored only on F-keys
+and arrows. Whether the recorder can even receive a combination macOS has taken is
+untested, since the system may take the keystroke before the recorder sees it; and nothing
+lists another app's. One recording attempt by hand would say whether it is needed.
+
+**Texts that said too much.** The welcome window said nothing you copy is written to
+disk; it now says pinned items are saved as plain text, unless a password manager marked
+them as secret, and that not every one does. The settings caption on secrets from browser
+extensions no longer says Chrome was measured.
+
+The § and ± that `make verify-layout` found the RDP profile sending to an ISO-only key
+are not touched here: what arrives needs a real session.
+
 ## Typing gets checks of its own — 2026-10-06
 
 Until now nothing automated looked at the typing side. `make verify` and `make
@@ -1952,12 +2058,16 @@ build here. The commit does.
 
 ## Raised, not yet decided
 
-- [ ] **"Up to date" can be stale, and nothing says so.** The update check runs five
-      seconds after launch and, in the Updates tab, only when no check has run at all —
-      the guard is `status == .idle`. Open settings on an app that has been running
-      for a week and it reports the answer from a week ago, with no hint of its age. The
-      *Check now* button sits right beside it, so nobody is blocked, but they have to know
-      to distrust the line above it first.
+- [x] **"Up to date" can be stale, and nothing says so.** **Resolved 2026-10-06:** the
+      tab shows when the check ran, and instead of re-checking when the tab opens, a
+      running copy asks again every six hours — see *Found by the survey, fixed in the
+      app*. What follows is the question as it was raised.
+
+      The update check runs five seconds after launch and, in the Updates tab, only when
+      no check has run at all — the guard is `status == .idle`. Open settings on an app
+      that has been running for a week and it reports the answer from a week ago, with no
+      hint of its age. The *Check now* button sits right beside it, so nobody is blocked,
+      but they have to know to distrust the line above it first.
 
       Two ways out, and they are not exclusive: re-check on appear when the last one is
       older than some interval, or show when the check happened rather than only what it
@@ -2003,7 +2113,9 @@ build here. The commit does.
 - [ ] **A shortcut that collides with another one is accepted without a word.** See the
       correction under the hotkey recorder in Phase 3: `RegisterEventHotKey` does not
       refuse a combination that another app or macOS itself already uses (measured), so
-      the "already taken" message is never shown for it.
+      the "already taken" message is never shown for it. Since 2026-10-06 the message no
+      longer blames another app; detecting a clash is still open — see *Found by the
+      survey, fixed in the app* for what would and would not be possible.
 
 - [x] **Nothing automated checked typing.** `make verify` and `make verify-watcher`
       covered the clipboard side only, and the Shift bug fixed in 1.3.1 was reported by a
@@ -2015,8 +2127,9 @@ build here. The commit does.
       `Sources/TypeSpike`, kept in step with `KeyboardLayout` by hand. The two agreed on
       2026-10-06 for all sixteen maps the layout check builds; nothing keeps them so.
 
-- [ ] **A Windows line ending is not typed as Return.** Found by `make verify-typing`;
-      see *Typing gets checks of its own — 2026-10-06*.
+- [x] **A Windows line ending is not typed as Return.** Found by `make verify-typing`;
+      see *Typing gets checks of its own — 2026-10-06*. Fixed the same day — see *Found by
+      the survey, fixed in the app*.
 
 - [ ] **§ and ± over RDP go to a key a U.S. Windows layout does not have.** Found by
       `make verify-layout`, same entry. One test in a real session would settle what

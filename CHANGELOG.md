@@ -15,6 +15,55 @@ Each version lists what is new apart from what was fixed, which is the same spli
 shows before and after an update. *Changed* is for what behaves differently without being
 new, and *Removed* for what is gone.
 
+## Unreleased
+
+### New
+
+**Settings → Updates says when it last checked.** "Up to date" now reads *up to date,
+checked 14:05*, because from a copy that has been running since Monday a bare "up to date"
+could have been Monday's answer.
+
+### Changed
+
+**Toothpaste checks for updates while it runs, not only at launch.** Every six hours by the
+clock, so a copy that starts at login hears about a new version the same day rather than at
+its next restart — and the arrow on the menu bar icon, the one place a new version is
+announced, appears without anyone opening Settings. It is the same check, behind the same
+switch, now called *Check for updates*. A timed check shows nothing while it runs, and when
+it fails — offline, say — the last answer stands.
+
+### Fixed
+
+**Search ignored characters typed with Option**, such as € on most layouts, and \, | or
+brackets on German, French, Belgian and Swiss ones.
+
+**A Windows line ending (CR LF) was not typed as Return.** Over RDP it was dropped and
+reported as a character the layout cannot type; in Mac apps it went out as a typed
+character instead of the Return key. Found by a new automated check rather than seen
+happen. A row holding such text now shows all of it rather than its first line, and the
+Layout check no longer lists the line ending.
+
+**The panel and the welcome window showed ⌃⌥V** after you had recorded another shortcut.
+F13 to F20, Help, and the keypad's Enter and Clear now show their names, rather than an
+invisible character or *key 64*.
+
+**Toothpaste no longer says another app has taken your shortcut.** That was never why a
+shortcut failed: macOS accepts a shortcut even when another app or macOS itself already
+uses it, so Toothpaste cannot tell you about a clash. If a shortcut you record does nothing,
+choose another.
+
+**Show panel, chosen from the menu while the panel was open,** cancelled the entry you had
+picked, and the next click closed the panel instead of typing.
+
+**The characters a layout could not type were written to the system log.** The log, which
+macOS keeps on disk, now gets only how many. The warning on the menu bar icon still names
+them, except for a secret shown as dots.
+
+**The welcome window said nothing you copy is written to disk.** Pinned entries are, as
+plain text, unless a password manager marked them as secret; it now says so. And the
+settings caption on secrets from browser extensions no longer says Chrome was measured —
+only Brave was.
+
 ## 1.5.0 — 2026-09-30
 
 ### New
