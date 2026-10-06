@@ -2,14 +2,14 @@
 # Prints the `--sdk <path>` argument the build needs, or nothing when the default SDK
 # works.
 #
-# Why this exists: Command Line Tools 6.4 ships a macOS 27 SDK whose SwiftUI declares
+# Why this exists: Command Line Tools 27 ships a macOS 27 SDK whose SwiftUI declares
 # @State and friends as macros, but does *not* ship the SwiftUIMacros plugin that
 # implements them. Every SwiftUI file then fails with
 #
 #   external macro implementation type 'SwiftUIMacros.StateMacro' could not be found
 #
 # Full Xcode has the plugin; Command Line Tools alone does not. Rather than require a
-# 10 GB Xcode install for a 1.6 MB app, build against the newest SDK that does not need
+# 10 GB Xcode install for a 3 MB app, build against the newest SDK that does not need
 # the plugin.
 #
 # Delete this once Command Line Tools ships the plugin, and drop the calls in the

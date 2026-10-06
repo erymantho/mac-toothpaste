@@ -2,7 +2,7 @@ APP := dist/Toothpaste.app
 
 .PHONY: build app run cert install reset-permission verify verify-watcher appearances clean
 
-# See scripts/select-sdk.sh: Command Line Tools 6.4 ships an SDK it cannot fully build
+# See scripts/select-sdk.sh: Command Line Tools 27 ships an SDK it cannot fully build
 # against. Expands to nothing when the toolchain is healthy.
 SDK := $(shell ./scripts/select-sdk.sh)
 

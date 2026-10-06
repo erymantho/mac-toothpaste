@@ -779,13 +779,13 @@ now cost someone their habits, so they need a better reason than "it did not ear
 place". The hover detail strip had one.
 
 - Removed the detail strip (see above). Nothing replaces it.
-- **Command Line Tools 6.4 broke the build**, independently of any change here. It
-  ships a macOS 27 SDK whose SwiftUI declares `@State` as a macro without shipping the
-  plugin that implements it, so every SwiftUI file fails to compile. Full Xcode has the
-  plugin; CLT does not. `scripts/select-sdk.sh` picks the newest SDK that predates the
-  macro requirement and returns nothing once the plugin appears, so the workaround
-  removes itself. Verified the failure was not ours by building the previous commit:
-  58 errors there too.
+- **Command Line Tools 27.0 (Swift 6.4) broke the build**, independently of any change
+  here. It ships a macOS 27 SDK whose SwiftUI declares `@State` as a macro without
+  shipping the plugin that implements it, so every SwiftUI file fails to compile. Full
+  Xcode has the plugin; CLT does not. `scripts/select-sdk.sh` picks the newest SDK that
+  predates the macro requirement and returns nothing once the plugin appears, so the
+  workaround removes itself. Verified the failure was not ours by building the previous
+  commit: 58 errors there too.
 
   Worth noticing for the distribution model: "clone and build" means a toolchain update
   can break every colleague at once, with no bad commit to point at. This is the first

@@ -321,8 +321,8 @@ present. Nothing replaced it, and the underlying problem stands: rows are one li
 
 ### Fixed
 
-**The build against Command Line Tools 6.4**, which broke without any change here. CLT
-6.4 ships a macOS 27 SDK whose SwiftUI declares `@State` and friends as macros, without
+**The build against Command Line Tools 27.0** (Swift 6.4), which broke without any change
+here. It ships a macOS 27 SDK whose SwiftUI declares `@State` and friends as macros, without
 shipping the plugin that implements them, so every SwiftUI file fails to compile. Full
 Xcode has the plugin; Command Line Tools does not. `scripts/select-sdk.sh` picks the
 newest SDK that predates the requirement, and returns nothing once the plugin appears, so
