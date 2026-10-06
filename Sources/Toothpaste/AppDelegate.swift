@@ -382,7 +382,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if !result.skipped.isEmpty {
                 // Silence here would be dangerous: a password typed short looks like
                 // a wrong password, not like a tool that gave up.
-                flagIncomplete(skipped: result.skipped, profile: profile)
+                flagIncomplete(skipped: result.skipped, of: item, profile: profile)
             }
         }
     }
@@ -460,11 +460,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         watcher?.acknowledgeOwnWrite()
     }
 
-    private func flagIncomplete(skipped: [Character], profile: TargetProfile) {
-        let unique = String(Array(Set(skipped)).sorted())
-        NSLog("Toothpaste: \(skipped.count) character(s) not typeable on \(profile.name): \(unique)")
+    /// Which characters were left out goes on screen only, and for a secret shown as dots
+    /// not even there. The log keeps the count: macOS writes it to disk, and the characters
+    /// would put pieces of an entry where nothing unpinned, and no secret, is meant to be.
+    private func flagIncomplete(skipped: [Character], of item: ClipItem, profile: TargetProfile) {
+        NSLog("Toothpaste: \(skipped.count) character(s) not typeable on \(profile.name)")
 
-        flagWarning("Skipped \(skipped.count) character(s) not on the \(profile.name) layout: \(unique)")
+        if item.concealed && settings.maskConcealed {
+            flagWarning("Skipped \(skipped.count) character(s) of a secret, not on the \(profile.name) layout")
+        } else {
+            let unique = String(Array(Set(skipped)).sorted())
+            flagWarning("Skipped \(skipped.count) character(s) not on the \(profile.name) layout: \(unique)")
+        }
     }
 
     /// Something went wrong in a place the user cannot see, because the panel is
