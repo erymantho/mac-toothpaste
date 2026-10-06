@@ -818,8 +818,8 @@ Fixes for bugs found while the survey checked the open items against the code, a
 the reviews of the changes that followed it; for the Windows line ending, which the
 typing checks below turned up; and the decision that had waited under *Raised, not yet
 decided* since 1.2.1. None of these had been reported by anyone. Each says how it was
-established, and all of it was built, not yet used: the owner's test comes before the
-release.
+established, and the owner tried each by hand before the release — which changed the
+search fix, below.
 
 **Search ignored every character typed with Option.** The key handler kept shortcuts out
 of the query by refusing any key with ⌘, ⌃ or ⌥ held. On a Mac keyboard Option is not a
@@ -829,17 +829,36 @@ Belgian — € needs it on all nine, `\ | [ ] { }` on Belgian, French, German a
 German, @ on German and Swiss German. Across all 264 layouts on this Mac, fifteen type €
 without it.
 
-The first fix only dropped ⌥ from the refusal, and a review measured why that was not
-enough: SwiftUI's `KeyPress.characters` is the key as if no modifier but Shift applied —
-its own documentation says so, and an in-process probe confirmed it — so ⌥⇧2 arrived as
-`@`, not `€`. The handler now reads the characters from the key event being dispatched,
-`NSApp.currentEvent`, which has what the layout made: nothing for a dead key, and the
-composed character on the key after it. That also changes dead keys without Option, as
-U.S. International – PC has for `'` and `"`: the query got the bare accent and then the
-letter before. Whether the composed character arrives as it should was not measured,
-since the probe could only send events it had made itself; it is on the owner's test
-list, together with the one cost: a letter typed while ⌥ is still held from ⌃⌥V now
-comes in as ß or ®, where it was dropped.
+It took three tries. The first only dropped ⌥ from the refusal, and a review measured why
+that was not enough: SwiftUI's `KeyPress.characters` is the key as if no modifier but
+Shift applied — its own documentation says so, and an in-process probe confirmed it — so
+⌥⇧2 arrived as `@`, not `€`. The second read the characters of the key event being
+dispatched, `NSApp.currentEvent`, on the assumption that they come composed. Tried by
+hand on U.S. International – PC: `€` arrived, `'` then `e` arrived as a bare `e`, and an
+apostrophe on its own not at all. Composing a dead key with the next key is the text input
+system's work, and this search is not a text field. Before any of this the query had
+received the bare accent and then the letter, `'e` — wrong for `é`, but it had kept the
+apostrophe in `don't`, so the second try was a regression on that layout as well.
+
+The third keeps the pending dead key itself. `KeyComposer` asks the layout in use, through
+`UCKeyTranslate`, what each key press types, carrying the dead-key state from one press to
+the next as a text field's input system would — `é`, or the accent and the letter when they
+do not combine, `'t`. Only the low 16 bits of that state mean "still pending" (gotcha 4),
+so it is cleared once they are zero. `make verify-layout` has nine cases for it, on U.S.
+International – PC and U.S.; forgetting the state between presses reproduces exactly what
+was seen by hand, and suppressing dead keys reproduces the old `'e`, and both fail. The
+one cost remains: a letter typed while ⌥ is still held from ⌃⌥V now comes in as ß or ®,
+where it was dropped.
+
+**`kUCKeyTranslateNoDeadKeysBit` is a bit index, 0.** Found while making a mutant for the
+check above: passing it changed nothing, because the mask is
+`kUCKeyTranslateNoDeadKeysMask`, 1. The map builder, its copy in TypeSpike and the layout
+check's own reader all passed the bit where they meant "no dead keys", and so ran with dead
+keys on — which turns out to be what they need: a dead key alone must type nothing, or it
+would be mapped as a key that types its accent and, pressed in a real app, swallows the
+next character instead. They now pass 0 and say why; the golden file confirms not one
+stroke moved. `KeyCombo`, which only names keys, takes the real mask, so a shortcut on a
+dead key shows its accent rather than *key 39*.
 
 **A Windows line ending was not typed as Return.** Swift reads `\r\n` as a single
 `Character`, so the engine's test for `"\n"` missed it: over RDP the line break was

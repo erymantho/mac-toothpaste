@@ -195,13 +195,14 @@ pasteboard could produce.
 first builds `KeyboardLayout` for eight layouts every Mac has — looked up by ID, enabled or
 not, with the keyboard type pinned to ANSI so the last keyboard used plays no part — and
 checks the rules in gotcha 4 plus `scripts/verify-layout.golden`, which says exactly which
-character's keys moved. A macOS update can change Apple's layouts; the report says whether
-a layout's own bytes changed, and `scripts/verify-layout.sh --update` records the new map
-once the diff has been read. The second compiles `TypingEngine` with a `CGEvent` of its own
-that records instead of posting, and checks the order and flags of what would be sent —
-modifier keys as key events, the left/right bits beside them, Return for a newline. The
-script refuses to run a binary that links `CGEventPost`. Neither can say what arrives on
-the far side of an RDP session; that still takes a real one.
+character's keys moved — and how the search's `KeyComposer` composes dead keys. A macOS
+update can change Apple's layouts; the report says whether a layout's own bytes changed,
+and `scripts/verify-layout.sh --update` records the new map once the diff has been read.
+The second compiles `TypingEngine` with a `CGEvent` of its own that records instead of
+posting, and checks the order and flags of what would be sent — modifier keys as key
+events, the left/right bits beside them, Return for a newline. The script refuses to run
+a binary that links `CGEventPost`. Neither can say what arrives on the far side of an RDP
+session; that still takes a real one.
 
 `make app` produces `dist/Toothpaste.app`. It is an accessory app: menu bar icon,
 no Dock icon, no main window.
@@ -221,6 +222,7 @@ Sources/Toothpaste/
     KeyboardLayout.swift       character → keystroke map for a chosen layout
     TypingEngine.swift         posts the events, pacing, Esc cancellation
     TargetProfile.swift        how to type into one kind of destination
+    KeyComposer.swift          dead keys composed for the panel's search
     ProfileStore.swift         the profiles, and which one a destination gets
     Accessibility.swift        AXIsProcessTrusted gate + prompt
   UI/
@@ -328,6 +330,16 @@ These are the non-obvious ones. Read before touching the relevant area.
    - Only character-producing keycodes may complete a dead key. `UCKeyTranslate`
      will happily "flush" an accent against a modifier keycode, which is how a naive
      version chose Right Command as the completion for a double quote.
+   - **`kUCKeyTranslateNoDeadKeysBit` is a bit index — 0 — not an option.** The option is
+     `kUCKeyTranslateNoDeadKeysMask`. The map builder passes 0 on purpose: a dead key alone
+     must type nothing, or it gets mapped as a key that types its accent. Do not "fix" it
+     to the mask. Only `KeyCombo`, which names keys, wants the mask.
+   - **The panel's search composes its own dead keys.** It is not a text field, and
+     composing is the text input system's work: `KeyPress.characters` ignores Option, and
+     an `NSEvent`'s own characters are not composed — tried by hand, `'` then `e` arrived
+     as `e`.
+     `KeyComposer` carries `UCKeyTranslate`'s dead-key state from one key press to the
+     next instead.
 5. **Newlines are the exception** — they need a real Return key event (virtual key
    36). Split text on newlines, type the segments, post Return between them.
 6. **Clear `event.flags` explicitly** and wait for the hotkey's modifiers to be
@@ -718,8 +730,9 @@ Be honest about this in the UI and the README:
   confirmation, and never make it automatic.
 - **Checking for updates is the only network access the app has.** `git fetch --tags`
   against the clone's own remote, at launch and every six hours while it runs; nothing
-  about the user or the clipboard is sent, and `Settings.checkForUpdates` switches it off. Before this the app talked to nothing at
-  all, which is a property worth giving up deliberately rather than by accident.
+  about the user or the clipboard is sent, and `Settings.checkForUpdates` switches it off.
+  Before this the app talked to nothing at all, which is a property worth giving up
+  deliberately rather than by accident.
 
 ## Conventions
 

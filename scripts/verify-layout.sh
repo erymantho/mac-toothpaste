@@ -26,12 +26,13 @@ trap 'rm -rf "$SCRATCH"' EXIT
 
 # No select-sdk.sh: like verify-watcher, this compiles AppKit and Carbon alone, which build
 # on the default SDK. TargetProfile.swift is here so the maps are the ones the default
-# profiles ask for, not a copy of their settings.
+# profiles ask for, not a copy of their settings; KeyComposer.swift for the search's side.
 swiftc -swift-version 5 -parse-as-library \
 	-target "$(uname -m)-apple-macos14.0" \
 	-o "$SCRATCH/verify-layout" \
 	"$SOURCE" \
 	"$ROOT/Sources/Toothpaste/Typing/TargetProfile.swift" \
+	"$ROOT/Sources/Toothpaste/Typing/KeyComposer.swift" \
 	"$ROOT/scripts/verify-layout.swift"
 
 status=0

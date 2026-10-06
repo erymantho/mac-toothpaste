@@ -35,7 +35,9 @@ it fails — offline, say — the last answer stands.
 ### Fixed
 
 **Search ignored characters typed with Option**, such as € on most layouts, and \, | or
-brackets on German, French, Belgian and Swiss ones.
+brackets on German, French, Belgian and Swiss ones. And an accent typed with a dead key
+came out as the accent and the letter: on U.S. International – PC, ' then e gave 'e. It
+now composes to é, as it would in a text field.
 
 **A Windows line ending (CR LF) was not typed as Return.** Over RDP it was dropped and
 reported as a character the layout cannot type; in Mac apps it went out as a typed
@@ -45,7 +47,8 @@ Layout check no longer lists the line ending.
 
 **The panel and the welcome window showed ⌃⌥V** after you had recorded another shortcut.
 F13 to F20, Help, and the keypad's Enter and Clear now show their names, rather than an
-invisible character or *key 64*.
+invisible character or *key 64*, and a shortcut on a dead key shows its accent: ⌃⌥', not
+*⌃⌥key 39*.
 
 **Toothpaste no longer says another app has taken your shortcut.** That was never why a
 shortcut failed: macOS accepts a shortcut even when another app or macOS itself already

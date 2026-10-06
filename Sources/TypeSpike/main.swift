@@ -186,16 +186,16 @@ func buildKeyMap() -> [Character: KeyStroke] {
     layoutData.withUnsafeBytes { raw in
         guard let layout = raw.baseAddress?.assumingMemoryBound(to: UCKeyboardLayout.self) else { return }
 
-        /// Returns the characters a key produces, and the dead-key state it leaves.
+        /// Returns the characters a key produces, and the dead-key state it leaves. Dead keys
+        /// stay on, options 0, as in KeyboardLayout.build — see the note there.
         func translate(
-            _ keyCode: Int, _ carbonModifiers: UInt32, state: inout UInt32, keepDeadKeys: Bool
+            _ keyCode: Int, _ carbonModifiers: UInt32, state: inout UInt32
         ) -> String {
             var length = 0
             var chars = [UniChar](repeating: 0, count: 8)
-            let options = keepDeadKeys ? OptionBits(0) : OptionBits(kUCKeyTranslateNoDeadKeysBit)
             let status = UCKeyTranslate(
                 layout, UInt16(keyCode), UInt16(kUCKeyActionDown), carbonModifiers,
-                keyboardType, options, &state, 8, &length, &chars
+                keyboardType, 0, &state, 8, &length, &chars
             )
             guard status == noErr, length > 0 else { return "" }
             return String(utf16CodeUnits: chars, count: length)
@@ -206,7 +206,7 @@ func buildKeyMap() -> [Character: KeyStroke] {
         for (carbonModifiers, cgFlags) in combos {
             for keyCode in 0..<128 where !keypad.contains(keyCode) {
                 var state: UInt32 = 0
-                let produced = translate(keyCode, carbonModifiers, state: &state, keepDeadKeys: false)
+                let produced = translate(keyCode, carbonModifiers, state: &state)
                 guard produced.count == 1, let character = produced.first else { continue }
                 characterKeys.insert(keyCode)
                 if map[character] == nil {
@@ -220,7 +220,7 @@ func buildKeyMap() -> [Character: KeyStroke] {
         for (carbonModifiers, cgFlags) in combos {
             for keyCode in 0..<128 where !keypad.contains(keyCode) {
                 var state: UInt32 = 0
-                let produced = translate(keyCode, carbonModifiers, state: &state, keepDeadKeys: true)
+                let produced = translate(keyCode, carbonModifiers, state: &state)
                 if produced.isEmpty && state != 0 {
                     deadKeys.append((CGKeyCode(keyCode), cgFlags, state))
                 }
@@ -237,7 +237,7 @@ func buildKeyMap() -> [Character: KeyStroke] {
                 // Right Command does nothing of the sort in an actual app.
                 for keyCode in 0..<128 where characterKeys.contains(keyCode) {
                     var state = deadState
-                    let produced = translate(keyCode, carbonModifiers, state: &state, keepDeadKeys: true)
+                    let produced = translate(keyCode, carbonModifiers, state: &state)
                     // Only the LOW 16 bits say whether a dead key is still pending —
                     // the high word just remembers which dead key was last consumed, so
                     // a successful composition reports e.g. 0x40000, not 0.

@@ -74,9 +74,12 @@ struct KeyCombo: Equatable, Codable {
             var deadKeyState: UInt32 = 0
             var length = 0
             var chars = [UniChar](repeating: 0, count: 4)
+            // The mask, not `kUCKeyTranslateNoDeadKeysBit`, which is a bit index — 0 — and
+            // left a dead key with nothing to show: ⌃⌥' read as "⌃⌥key 39". For a name, the
+            // accent itself is what the key is.
             let status = UCKeyTranslate(
                 layout, UInt16(keyCode), UInt16(kUCKeyActionDown), 0,
-                UInt32(LMGetKbdType()), OptionBits(kUCKeyTranslateNoDeadKeysBit),
+                UInt32(LMGetKbdType()), OptionBits(kUCKeyTranslateNoDeadKeysMask),
                 &deadKeyState, 4, &length, &chars
             )
             guard status == noErr, length > 0 else { return }

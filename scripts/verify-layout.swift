@@ -194,8 +194,10 @@ struct LayoutData {
         data = Unmanaged<CFData>.fromOpaque(pointer).takeUnretainedValue() as Data
     }
 
-    /// What one key press types, and the dead-key state it leaves behind.
-    func type(_ code: Int, _ flags: CGEventFlags, state: inout UInt32, deadKeys: Bool = true) -> String {
+    /// What one key press types, and the dead-key state it leaves behind. Dead keys stay on,
+    /// options 0, as in KeyboardLayout.build: a dead key alone types nothing, which is what
+    /// "one key types this character on its own" below has to mean.
+    func type(_ code: Int, _ flags: CGEventFlags, state: inout UInt32) -> String {
         var modifiers = 0
         if flags.contains(.maskShift) { modifiers |= shiftKey }
         if flags.contains(.maskAlternate) { modifiers |= optionKey }
@@ -208,7 +210,7 @@ struct LayoutData {
             var chars = [UniChar](repeating: 0, count: 8)
             let status = UCKeyTranslate(
                 layout, UInt16(code), UInt16(kUCKeyActionDown), UInt32(modifiers >> 8),
-                UInt32(pinnedKeyboardType), deadKeys ? 0 : OptionBits(kUCKeyTranslateNoDeadKeysBit),
+                UInt32(pinnedKeyboardType), 0,
                 &current, 8, &length, &chars
             )
             return status == noErr ? String(utf16CodeUnits: chars, count: length) : ""
@@ -422,7 +424,7 @@ struct VerifyLayout {
                     (0..<128).contains { code in
                         guard !keypadKeys.contains(code) else { return false }
                         var state: UInt32 = 0
-                        return layoutData.type(code, flags, state: &state, deadKeys: false) == String(character)
+                        return layoutData.type(code, flags, state: &state) == String(character)
                     }
                 }
                 switch (stroke, best) {
@@ -444,6 +446,37 @@ struct VerifyLayout {
         check(replay, "every stroke, replayed through UCKeyTranslate, types its character and leaves no dead key pending")
         check(order, "fewest modifiers first: none, Shift, Option, both, and a dead key only when no single key will do")
         check(listed, "Layout check lists exactly what a map lacks, and never the newline Return types")
+
+        // The other direction: the panel's search is not a text field, so nothing composes
+        // its dead keys but KeyComposer, which asks the layout the same way a text field would.
+        print("\n=== the search's dead keys, composed by KeyComposer ===")
+        func typed(_ id: String, _ keys: [(Int, NSEvent.ModifierFlags)]) -> String {
+            let filter = [kTISPropertyInputSourceID as String: id] as CFDictionary
+            guard let source = (TISCreateInputSourceList(filter, true)?.takeRetainedValue()
+                    as? [TISInputSource])?.first
+            else { return "no layout \(short(id))" }
+            var composer = KeyComposer()
+            return keys.map { code, flags in
+                composer.characters(keyCode: UInt16(code), modifiers: flags, layout: source) ?? "nil"
+            }.joined(separator: "|")
+        }
+        let international = "com.apple.keylayout.USInternational-PC", us = "com.apple.keylayout.US"
+        let searches: [(layout: String, keys: [(Int, NSEvent.ModifierFlags)], expected: String, what: String)] = [
+            (international, [(kVK_ANSI_Quote, []), (kVK_ANSI_E, [])], "|é", "' then e"),
+            (international, [(kVK_ANSI_Quote, []), (kVK_Space, [])], "|'", "' then space"),
+            (international, [(kVK_ANSI_Quote, []), (kVK_ANSI_T, [])], "|'t", "' then t"),
+            (international, [(kVK_ANSI_Quote, [.shift]), (kVK_ANSI_U, [])], "|ü", "\" then u"),
+            (international, [(kVK_ANSI_Quote, []), (kVK_ANSI_E, []), (kVK_ANSI_E, [])], "|é|e", "é, then a plain e"),
+            (international, [(kVK_ANSI_2, [.shift, .option])], "€", "⇧⌥2"),
+            (us, [(kVK_ANSI_E, [.option]), (kVK_ANSI_E, [])], "|é", "⌥e then e"),
+            (us, [(kVK_ANSI_E, [.option]), (kVK_Space, [])], "|´", "⌥e then space"),
+            (us, [(kVK_ANSI_A, [.shift])], "A", "⇧a"),
+        ]
+        check(searches.compactMap { search in
+            let got = typed(search.layout, search.keys)
+            return got == search.expected ? nil
+                : "\(short(search.layout)) \(search.what) typed \(got.debugDescription), not \(search.expected.debugDescription)"
+        }, "a dead key waits for the next key: é, or the accent and the letter; ⇧⌥2 is €")
 
         print(failures == 0 ? "\nall rules hold" : "\n\(failures) failed")
         exit(failures == 0 ? 0 : 1)

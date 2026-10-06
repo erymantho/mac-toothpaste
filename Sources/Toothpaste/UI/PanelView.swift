@@ -46,8 +46,12 @@ struct PanelView: View {
     /// field with no height will not take focus at all.
     ///
     /// Handling the keys directly costs selection and cursor movement inside the query,
-    /// which is a fair trade for something you type three characters into.
+    /// which is a fair trade for something you type three characters into — and it means
+    /// composing dead keys here, which a text field would have done; see `KeyComposer`.
     private var searchVisible: Bool { !query.isEmpty }
+
+    /// The dead key waiting for the key that completes it, as the search sees it.
+    @State private var composer = KeyComposer()
 
     private var filtered: [ClipItem] {
         guard !query.isEmpty else { return store.items }
@@ -86,19 +90,12 @@ struct PanelView: View {
             confirmingClear = false
             confirmingRemove = nil
             query = ""
+            composer.reset()
         }
         .onKeyPress { press in
-            // What the key typed, read from the event itself. `press.characters` is the key
-            // as if no modifier but Shift applied: ⌥⇧2 arrives there as "@", not "€", and
-            // a dead key as its bare accent. The event has the character the layout made,
-            // nothing for a dead key, and the composed one on the key that completes it.
-            let typed = NSApp.currentEvent.flatMap { $0.type == .keyDown ? $0.characters : nil }
-                ?? press.characters
-            guard let scalar = typed.unicodeScalars.first else {
-                // A dead key, waiting for the key that completes it: nothing to add yet,
-                // and nothing to beep about.
-                return press.modifiers.isDisjoint(with: [.command, .control]) ? .handled : .ignored
-            }
+            // Which key, read with modifiers ignored: that is what tells backspace, Return,
+            // Tab, arrows and function keys apart from keys that type something.
+            guard let scalar = press.characters.unicodeScalars.first else { return .ignored }
 
             // Backspace is handled here rather than through
             // `.onKeyPress(keys: [.delete])`, which never fires: the key arrives at this
@@ -107,6 +104,7 @@ struct PanelView: View {
             // above 0x20 — that is why backspace first appeared to do nothing at all
             // while quietly appending a DEL character to the query.
             if scalar.value == 0x7F {
+                composer.reset()
                 guard !query.isEmpty else { return .handled }
                 if press.modifiers.contains(.command) { query = "" } else { query.removeLast() }
                 return .handled
@@ -120,8 +118,20 @@ struct PanelView: View {
             // Refusing it made those unsearchable.
             guard press.modifiers.isDisjoint(with: [.command, .control]),
                   scalar.value >= 0x20, scalar.value < 0xF700
-            else { return .ignored }
-            query.append(contentsOf: typed)
+            else {
+                composer.reset()
+                return .ignored
+            }
+
+            // What the key typed. `press.characters` cannot say: ⌥⇧2 is "@" there, not "€".
+            // The event's own characters leave dead keys to a text field, which this is
+            // not, so `KeyComposer` asks the layout; "" means a dead key is waiting.
+            let event = NSApp.currentEvent.flatMap { $0.type == .keyDown ? $0 : nil }
+            let typed = event.flatMap { composer.characters(keyCode: $0.keyCode, modifiers: $0.modifierFlags) }
+                ?? event?.characters ?? press.characters
+            if !typed.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F }) {
+                query.append(contentsOf: typed)
+            }
             return .handled
         }
         .onKeyPress(.escape) {

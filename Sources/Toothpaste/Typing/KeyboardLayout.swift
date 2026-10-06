@@ -74,15 +74,20 @@ struct KeyboardLayout {
             guard let layout = raw.baseAddress?.assumingMemoryBound(to: UCKeyboardLayout.self)
             else { return }
 
+            // Dead keys stay on in every pass, options 0. A dead key then types nothing on
+            // its own, which is what keeps it out of pass 1: with
+            // `kUCKeyTranslateNoDeadKeysMask` it would type its accent there and be mapped
+            // as a key that, pressed alone in a real app, types nothing and swallows the
+            // next character. This used to pass `kUCKeyTranslateNoDeadKeysBit`, which looks
+            // like the opposite and is a bit index — 0 — so the same thing.
             func translate(
-                _ keyCode: Int, _ carbonModifiers: UInt32, state: inout UInt32, keepDeadKeys: Bool
+                _ keyCode: Int, _ carbonModifiers: UInt32, state: inout UInt32
             ) -> String {
                 var length = 0
                 var chars = [UniChar](repeating: 0, count: 8)
-                let options = keepDeadKeys ? OptionBits(0) : OptionBits(kUCKeyTranslateNoDeadKeysBit)
                 let status = UCKeyTranslate(
                     layout, UInt16(keyCode), UInt16(kUCKeyActionDown), carbonModifiers,
-                    keyboardType, options, &state, 8, &length, &chars
+                    keyboardType, 0, &state, 8, &length, &chars
                 )
                 guard status == noErr, length > 0 else { return "" }
                 return String(utf16CodeUnits: chars, count: length)
@@ -93,7 +98,7 @@ struct KeyboardLayout {
             for (carbonModifiers, cgFlags) in combos {
                 for keyCode in 0..<128 where !keypad.contains(keyCode) {
                     var state: UInt32 = 0
-                    let produced = translate(keyCode, carbonModifiers, state: &state, keepDeadKeys: false)
+                    let produced = translate(keyCode, carbonModifiers, state: &state)
                     guard produced.count == 1, let character = produced.first else { continue }
                     characterKeys.insert(keyCode)
                     if strokes[character] == nil {
@@ -107,7 +112,7 @@ struct KeyboardLayout {
             for (carbonModifiers, cgFlags) in combos {
                 for keyCode in 0..<128 where !keypad.contains(keyCode) {
                     var state: UInt32 = 0
-                    let produced = translate(keyCode, carbonModifiers, state: &state, keepDeadKeys: true)
+                    let produced = translate(keyCode, carbonModifiers, state: &state)
                     if produced.isEmpty && state != 0 {
                         deadKeys.append((CGKeyCode(keyCode), cgFlags, state))
                     }
@@ -122,7 +127,7 @@ struct KeyboardLayout {
                     // pressing Right Command does nothing of the sort in a real app.
                     for keyCode in 0..<128 where characterKeys.contains(keyCode) {
                         var state = deadState
-                        let produced = translate(keyCode, carbonModifiers, state: &state, keepDeadKeys: true)
+                        let produced = translate(keyCode, carbonModifiers, state: &state)
                         // Only the LOW 16 bits mean "a dead key is still pending"; the
                         // high word remembers the one just consumed, so a successful
                         // composition reports e.g. 0x40000, not 0. Getting this wrong
