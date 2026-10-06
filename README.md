@@ -137,14 +137,15 @@ payload.
 
 ## Updating
 
-Toothpaste checks for a new version at launch; when there is one, the menu bar icon gains
-an arrow and Settings → Updates offers to install it. Pressing the button quits
-Toothpaste, pulls and rebuilds from the checkout you installed from, and starts the new
-version — about a minute, no terminal. It shows the release notes first, for every
-version since yours and split into what is new and what was fixed, so you see what you
-are getting before you take it. When it worked, the arrow on the menu bar icon is gone
-and Settings → Updates shows what is new since your old version. When it did not, the old
-version comes back and a window says why, with the build log a click away.
+Toothpaste checks for a new version at launch and every six hours while it runs; when
+there is one, the menu bar icon gains an arrow and Settings → Updates offers to install
+it. Pressing the button quits Toothpaste, pulls and rebuilds from the checkout you
+installed from, and starts the new version — about a minute, no terminal. It shows the
+release notes first, for every version since yours and split into what is new and what
+was fixed, so you see what you are getting before you take it. When it worked, the arrow
+on the menu bar icon is gone and Settings → Updates shows what is new since your old
+version. When it did not, the old version comes back and a window says why, with the
+build log a click away.
 
 (A copy on 1.2.x shows only the newest version's notes, as plain text — the update that
 takes it past 1.2 is still run by its own older updater.)
@@ -153,7 +154,7 @@ Two things it says in the confirmation, and they are both true: unpinned history
 written to disk, so it is gone after the restart, and the button **builds and runs
 whatever is in the repository**. That is already what `git pull && make install` does —
 the button just removes the terminal from in front of it. If you would rather keep that
-step, switch off *Check for updates at launch* and do it by hand:
+step, switch off *Check for updates* and do it by hand:
 
 ```sh
 git pull

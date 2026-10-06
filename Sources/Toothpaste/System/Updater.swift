@@ -41,6 +41,32 @@ final class Updater: ObservableObject {
 
     @Published private(set) var status: Status = .idle
 
+    /// When a check last got an answer, up to date or not. "Up to date" is only as current
+    /// as the check behind it, and used to give no hint of how old that was.
+    @Published private(set) var lastChecked: Date?
+
+    /// How often a running copy asks again. One that starts at login can run for weeks,
+    /// and a release tagged after its launch check would otherwise wait for the next
+    /// restart — with the menu bar arrow, the one place an update is announced, absent
+    /// all that time.
+    static let recheckInterval: TimeInterval = 6 * 60 * 60
+
+    /// How often the app delegate's timer asks `recheckIfDue()`. A timer's interval
+    /// counts only time the Mac is awake — the run loop keeps it in `mach_absolute_time`,
+    /// which stops during sleep — so a six-hour timer would stretch across every night.
+    /// A short tick that compares clock times does not.
+    static let recheckTick: TimeInterval = 15 * 60
+
+    /// Checks never overlap: two `git fetch`es in one repository compete for its locks.
+    private var probing = false
+
+    /// When the last check began, by the clock, whoever started it.
+    private var lastAttempt: Date?
+
+    /// Whether whoever started the running check is waiting for its outcome, and so has
+    /// to be shown a failure.
+    private var failureIsNews = false
+
     /// Left behind by `scripts/update.sh` when an attempt failed. It has to survive a
     /// restart: by the time it is written this app is gone, so the next launch is the
     /// only place a failure can be reported.
@@ -164,10 +190,40 @@ final class Updater: ObservableObject {
         }
 
         status = .checking
+        failureIsNews = true
+        startProbe(in: checkout)
+    }
+
+    /// The same check, asked for by the timer rather than by anyone, once `recheckInterval`
+    /// has passed by the clock since the last one began. It shows nothing while it runs,
+    /// so the menu bar arrow does not blink out every few hours, and a failure leaves the
+    /// last answer standing: a laptop that was offline for an afternoon has not stopped
+    /// being up to date.
+    func recheckIfDue() {
+        guard Date().timeIntervalSince(lastAttempt ?? .distantPast) >= Self.recheckInterval,
+              let checkout = Self.checkout
+        else { return }
+        startProbe(in: checkout)
+    }
+
+    private func startProbe(in checkout: String) {
+        guard !probing else { return }
+        probing = true
+        lastAttempt = Date()
         let current = AppVersion.short
         Task.detached(priority: .utility) {
             let result = Self.probe(checkout: checkout, current: current)
-            await MainActor.run { self.status = result }
+            await MainActor.run {
+                self.probing = false
+                let watched = self.failureIsNews
+                self.failureIsNews = false
+                if case .failed = result {
+                    guard watched else { return }
+                } else {
+                    self.lastChecked = Date()
+                }
+                self.status = result
+            }
         }
     }
 
@@ -283,6 +339,13 @@ final class Updater: ObservableObject {
     func update() {
         if let reason = blockedReason?() {
             status = .failed(reason)
+            return
+        }
+        // A timed check still fetching would race the update's own `git pull` for the
+        // same refs, and the loser fails the update. It takes a second or two; when it
+        // lands, its answer replaces this one.
+        if probing {
+            status = .failed("still checking for updates — try again in a moment")
             return
         }
         guard let checkout = Self.checkout else {

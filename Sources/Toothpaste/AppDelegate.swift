@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var escapeMonitors: [Any] = []
     private var expiryTimer: Timer?
+    private var updateTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Before any window exists, so nothing is ever drawn in the wrong appearance.
@@ -198,12 +199,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &cancellables)
 
-        guard settings.checkForUpdates else { return }
         // Not at the instant of launch. Nothing here is urgent, and a network call
         // during startup is the one that gets blamed when startup feels slow.
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-            self?.updater.check()
+            guard let self, self.settings.checkForUpdates else { return }
+            self.updater.check()
         }
+
+        // Then again for as long as it runs, every `Updater.recheckInterval` by the clock;
+        // see `recheckTick` for why the timer itself is short. The switch is read every
+        // time, so turning it off stops these too, and turning it on later starts them
+        // without a restart.
+        updateTimer = Timer.scheduledTimer(withTimeInterval: Updater.recheckTick, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, self.settings.checkForUpdates else { return }
+                self.updater.recheckIfDue()
+            }
+        }
+        updateTimer?.tolerance = 60
     }
 
     /// Says that an update failed, on the launch it produced. A successful one says

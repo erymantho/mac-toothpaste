@@ -42,7 +42,8 @@ final class Settings: ObservableObject {
         didSet { UserDefaults.standard.set(maskConcealed, forKey: Self.maskConcealedKey) }
     }
 
-    /// Whether to ask the checkout's own remote for new version tags at launch.
+    /// Whether to ask the checkout's own remote for new version tags, at launch and every
+    /// `Updater.recheckInterval` after.
     ///
     /// This is the only thing the app does over the network at all, which is why it gets
     /// a switch rather than being assumed. Nothing about the user or the clipboard is

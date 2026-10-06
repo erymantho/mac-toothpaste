@@ -478,7 +478,12 @@ These are the non-obvious ones. Read before touching the relevant area.
       carries a timeout.
     - The check is `git fetch --tags` against the clone's *own* remote, so a fork updates
       from the fork. It moves remote-tracking refs and tags only, never the working tree
-      or the current branch, which is what makes it safe to run unattended.
+      or the current branch, which is what makes it safe to run unattended — at launch,
+      and every six hours after (`Updater.recheckInterval`). **By the clock, not by a
+      six-hour timer:** a timer counts only time the Mac is awake, so it would stretch
+      across every night. A fifteen-minute tick (`recheckTick`) compares clock times
+      instead. A timed check shows nothing while it runs and keeps the last answer when it
+      fails; checks never overlap, and *Update and restart* waits for one still running.
     - `git pull --ff-only`, so local commits or a dirty tree stop the update rather than
       being merged around.
     - **Tags are fetched with `--force`.** Without it a tag moved on the remote makes every
@@ -712,8 +717,8 @@ Be honest about this in the UI and the README:
   property; the button removes the terminal from in front of it. Say so in the
   confirmation, and never make it automatic.
 - **Checking for updates is the only network access the app has.** `git fetch --tags`
-  against the clone's own remote; nothing about the user or the clipboard is sent, and
-  `Settings.checkForUpdates` switches it off. Before this the app talked to nothing at
+  against the clone's own remote, at launch and every six hours while it runs; nothing
+  about the user or the clipboard is sent, and `Settings.checkForUpdates` switches it off. Before this the app talked to nothing at
   all, which is a property worth giving up deliberately rather than by accident.
 
 ## Conventions

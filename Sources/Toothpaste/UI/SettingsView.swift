@@ -188,8 +188,8 @@ private struct UpdatesTab: View {
             }
 
             Section {
-                Toggle("Check for updates at launch", isOn: $settings.checkForUpdates)
-                Text("The only thing Toothpaste does over the network, and it asks your own clone's remote for its version tags — nothing about you or your clipboard is sent. Updating then runs git pull and make install on your checkout, which means it builds and runs whatever is in the repository.")
+                Toggle("Check for updates", isOn: $settings.checkForUpdates)
+                Text("At launch, and every six hours while it runs. The only thing Toothpaste does over the network, and it asks your own clone's remote for its version tags — nothing about you or your clipboard is sent. Updating then runs git pull and make install on your checkout, which means it builds and runs whatever is in the repository.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -241,6 +241,14 @@ private struct UpdatesTab: View {
         return (since, nil, releases)
     }
 
+    /// With the time of the check, which is what the answer is worth: from a copy that has
+    /// been running since Monday, a bare "up to date" could have been Monday's.
+    private var upToDate: String {
+        guard let checked = updater.lastChecked else { return "up to date" }
+        let today = Calendar.current.isDateInToday(checked)
+        return "up to date, checked \(checked.formatted(date: today ? .omitted : .abbreviated, time: .shortened))"
+    }
+
     /// Everything the update state can be, including the two that are not really about
     /// updates: a checkout that has moved, and a check that could not reach anything.
     /// Both are common enough that folding them into "failed" would cost someone an
@@ -251,7 +259,7 @@ private struct UpdatesTab: View {
         case .idle, .upToDate:
             LabeledContent("Updates") {
                 HStack {
-                    Text(updater.status == .upToDate ? "up to date" : "not checked yet")
+                    Text(updater.status == .upToDate ? upToDate : "not checked yet")
                         .foregroundStyle(.secondary)
                     Button("Check now") { updater.check() }
                 }
