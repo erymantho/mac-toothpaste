@@ -160,6 +160,12 @@ make install
 
 Your certificate does not change, so the Accessibility permission survives either way.
 
+A clone from before 2026-09-15 sits on a history that was rewritten once that day.
+Depending on your git settings, `git pull` stops at *divergent branches*, *not possible to
+fast-forward* or *unrelated histories*; with `pull.rebase` set it goes through, skipping
+the old copies of the same commits. If it stops, clone again and `make install` from
+there; your certificate carries over, and so does the permission.
+
 Checking for updates is the only thing Toothpaste does over the network. It asks your own
 clone's remote for its version tags; nothing about you or your clipboard is sent.
 

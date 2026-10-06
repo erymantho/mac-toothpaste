@@ -111,6 +111,12 @@ annotation should repeat what the previous one added.
    on every check from then on. 1.3.0 and later fetch tags with `--force` and survive it;
    1.2.x copies do not, and would never be offered an update again. Get the annotation right
    before pushing; a mistake is fixed in the next version's notes.
+5. **Never rewrite `main` either.** `update.sh` pulls with `--ff-only`, so a rewritten `main`
+   fails every copy's update, under a message that blames local changes or the network. It
+   happened once, on 2026-09-15, before the updater existed. Two rulesets on GitHub hold
+   both this and step 4: *main: no force-push or deletion* and *release tags: no update or
+   deletion* (for `v*`). Turning one off is a deliberate act under Settings → Rules; what it
+   then lets through costs every clone.
 
 ## Stack
 

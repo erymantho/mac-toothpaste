@@ -1842,8 +1842,9 @@ build here. The commit does.
 - `Info.plist` → `1.0.0`
 - `scripts/bundle.sh` stamps `ToothpasteCommit` from `git rev-parse --short HEAD`,
   appending `+local` when the working tree is dirty
-- Settings → General shows `1.0.0 (57aec6b)`, selectable so it can be pasted into a
-  message
+- Settings → General shows `1.0.0 (0391c16)`, selectable so it can be pasted into a
+  message (the hash that commit has had since the history was rewritten on 2026-09-15;
+  it read `57aec6b` when this was written)
 - Falls back to `unknown` when built without git, so a tarball still builds
 
 ## Raised, not yet decided
